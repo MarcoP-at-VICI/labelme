@@ -796,9 +796,6 @@ class MainWindow(QtWidgets.QMainWindow):
         )
     def auto_detect_lines(self):
         """Estrae i segmenti LSD leggendo l'immagine direttamente dal disco."""
-        import math
-        import os
-        import numpy as np
         print("DEBUG: Avvio auto-detect...") 
 
         # 1. Recupero dinamico del percorso del file aperto
