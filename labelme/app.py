@@ -741,29 +741,29 @@ class MainWindow(QtWidgets.QMainWindow):
         )
     def auto_detect_lines(self):
     """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
-    if self.image is None:
-        return
-    
-    # LabelMe memorizza self.image come array NumPy RGB
-    gray = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
-    
-    # Inizializzazione del Line Segment Detector
-    lsd = cv2.createLineSegmentDetector(0)
-    lines = lsd.detect(gray)[0]
-    
-    if lines is not None:
-        # Per evitare crash dell'interfaccia, aggiungiamo gli shape in batch
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            
-            # Creazione dell'entità geometrica primitiva
-            shape = Shape(label="pista_elettrica", shape_type="line")
-            shape.addPoint(QtCore.QPointF(x1, y1))
-            shape.addPoint(QtCore.QPointF(x2, y2))
-            
-            # Aggiunta alle strutture dati grafiche di LabelMe
-            self.labelList.addShape(shape)
-            self.canvas.shapes.append(shape)
+        if self.image is None:
+            return
+        
+        # LabelMe memorizza self.image come array NumPy RGB
+        gray = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        
+        # Inizializzazione del Line Segment Detector
+        lsd = cv2.createLineSegmentDetector(0)
+        lines = lsd.detect(gray)[0]
+        
+        if lines is not None:
+            # Per evitare crash dell'interfaccia, aggiungiamo gli shape in batch
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                
+                # Creazione dell'entità geometrica primitiva
+                shape = Shape(label="pista_elettrica", shape_type="line")
+                shape.addPoint(QtCore.QPointF(x1, y1))
+                shape.addPoint(QtCore.QPointF(x2, y2))
+                
+                # Aggiunta alle strutture dati grafiche di LabelMe
+                self.labelList.addShape(shape)
+                self.canvas.shapes.append(shape)
         
         # Forza il rendering grafico sul canvas
         self.canvas.update()
