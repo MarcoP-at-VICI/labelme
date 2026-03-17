@@ -740,7 +740,7 @@ class MainWindow(QtWidgets.QMainWindow):
             toggle_keep_prev_mode,
         )
     def auto_detect_lines(self):
-    """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
+        """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
         if self.image is None:
             return
         
