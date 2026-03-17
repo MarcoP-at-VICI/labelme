@@ -27,6 +27,9 @@ from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
+import cv2
+import numpy as np
+from qtpy import QtCore
 
 from labelme import __appname__
 from labelme import __version__
@@ -527,6 +530,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing ai_mask. Ctrl+LeftClick ends creation."),
             enabled=False,
         )
+        # --- YOUR CUSTOM ACTION ---
+        actionAutoDetect = action(
+            text=self.tr("Auto-Detect Linee"),
+            slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
+            shortcut="Ctrl+D",
+            icon="magic.svg", # Using a default icon available in LabelMe
+            tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
+            enabled=False, # It starts disabled until an image is actually loaded
+        )
         open_next_img = action(
             text=self.tr("&Next Image"),
             slot=self._open_next_image,
@@ -697,10 +709,12 @@ class MainWindow(QtWidgets.QMainWindow):
             create_ai_polygon_mode,
             create_ai_mask_mode,
             brightness_contrast,
+            actionAutoDetect,
         )
         on_shapes_present = (save_as, hide_all, show_all, toggle_all)
         context_menu = (
             *[draw_action for _, draw_action in draw],
+            actionAutoDetect,
             edit_mode,
             edit,
             duplicate,
@@ -725,6 +739,38 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             toggle_keep_prev_mode,
         )
+    def auto_detect_lines(self):
+    """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
+    if self.image is None:
+        return
+    
+    # LabelMe memorizza self.image come array NumPy RGB
+    gray = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+    
+    # Inizializzazione del Line Segment Detector
+    lsd = cv2.createLineSegmentDetector(0)
+    lines = lsd.detect(gray)[0]
+    
+    if lines is not None:
+        # Per evitare crash dell'interfaccia, aggiungiamo gli shape in batch
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            
+            # Creazione dell'entità geometrica primitiva
+            shape = Shape(label="pista_elettrica", shape_type="line")
+            shape.addPoint(QtCore.QPointF(x1, y1))
+            shape.addPoint(QtCore.QPointF(x2, y2))
+            
+            # Aggiunta alle strutture dati grafiche di LabelMe
+            self.labelList.addShape(shape)
+            self.canvas.shapes.append(shape)
+        
+        # Forza il rendering grafico sul canvas
+        self.canvas.update()
+        self.setDirty()
+        self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
+
+        
         return _Actions(
             about=about,
             save=save,
