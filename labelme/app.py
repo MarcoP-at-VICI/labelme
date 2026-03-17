@@ -879,6 +879,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # nel caso anche labelList sia stata incapsulata)
             if hasattr(self, 'labelList'):
                 self.labelList.addShape(shape)
+        
+        # --- SINCRONIZZAZIONE STATO INTERNO ---
+        # FONDAMENTALE: Salva le forme nel sistema Undo/Redo per evitare IndexError
+        if hasattr(target_canvas, 'storeShapes'):
+            target_canvas.storeShapes()       
             
         target_canvas.update()
         self.setDirty() 
