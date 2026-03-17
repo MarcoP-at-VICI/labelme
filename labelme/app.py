@@ -867,7 +867,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         for length, line_coords in filtered_lines:
             x1, y1, x2, y2 = line_coords
-            shape = Shape(label="pista_elettrica", shape_type="line")
+            shape = Shape(label="Linea", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
            
