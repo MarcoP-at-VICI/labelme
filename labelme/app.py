@@ -796,7 +796,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
     def auto_detect_lines(self):
         """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
-        if self.image is None:
+        # Corretto l'accesso all'attributo incapsulato _image
+        if getattr(self, '_image', None) is None:
             return
         
         # LabelMe memorizza self.image come array NumPy RGB
@@ -812,7 +813,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 x1, y1, x2, y2 = line[0]
                 
                 # Creazione dell'entità geometrica primitiva
-                shape = Shape(label="pista_elettrica", shape_type="line")
+                shape = Shape(label="Linea", shape_type="line")
                 shape.addPoint(QtCore.QPointF(x1, y1))
                 shape.addPoint(QtCore.QPointF(x2, y2))
                 
