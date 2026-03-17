@@ -534,7 +534,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actionAutoDetect = action(
             text=self.tr("Auto-Detect Linee"),
             slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
-            shortcut="Ctrl+Shift+A",
+            shortcut="Ctrl+Shift+X",
             icon="magic.svg", # Using a default icon available in LabelMe
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
             enabled=False, # It starts disabled until an image is actually loaded
@@ -896,7 +896,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         target_canvas.update()
         self.setDirty() 
-        msg = f"Iniettati {len(filtered_lines)} segmenti validi."
+        msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
         self.statusBar().showMessage(msg)
         print(f"DEBUG: {msg}")
         
