@@ -798,6 +798,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
         # Corretto l'accesso all'attributo incapsulato _image
         # 1. Controlla che i dati dell'immagine esistano
+        print("DEBUG: Avvio auto-detect...")
         if not hasattr(self, 'image_data') or self.image_data is None:
             return
 
@@ -814,19 +815,29 @@ class MainWindow(QtWidgets.QMainWindow):
         lines = lsd.detect(gray)[0]
         
         if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
-                
-                shape = Shape(label="pista_elettrica", shape_type="line")
-                shape.addPoint(QtCore.QPointF(x1, y1))
-                shape.addPoint(QtCore.QPointF(x2, y2))
-                
-                self.labelList.addShape(shape)
-                self.canvas.shapes.append(shape)
+            print("DEBUG: OpenCV ha restituito 0 segmenti.")
+            self.statusBar().showMessage("Nessuna linea rilevata da OpenCV.")
+            return
             
-            self.canvas.update()
-            self.setDirty()
-            self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
+        print(f"DEBUG: Trovati {len(lines)} segmenti. Iniezione nel canvas in corso...")
+        
+        # Deseleziona eventuali shape attive per evitare conflitti visivi
+        self.canvas.deSelectShape()
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            
+            shape = Shape(label="pista_elettrica", shape_type="line")
+            shape.addPoint(QtCore.QPointF(x1, y1))
+            shape.addPoint(QtCore.QPointF(x2, y2))
+            shape.close() # FONDAMENTALE: dice a LabelMe che la geometria è finita
+            
+            self.labelList.addShape(shape)
+            self.canvas.shapes.append(shape)
+        
+        self.canvas.update()
+        self.setDirty() # Attiva il pulsante "Save"
+        self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
+        print("DEBUG: Aggiornamento canvas completato con successo.")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
