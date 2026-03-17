@@ -795,68 +795,77 @@ class MainWindow(QtWidgets.QMainWindow):
             edit_menu=edit_menu,
         )
     def auto_detect_lines(self):
-        """Estrae i segmenti LSD con filtraggio del rumore e protezione GUI."""
-        
+        """Estrae i segmenti LSD leggendo l'immagine direttamente dal disco."""
+        import math
+        import os
+        import numpy as np
         print("DEBUG: Avvio auto-detect...") 
+
+        # 1. Recupero dinamico del percorso del file aperto
+        file_path = getattr(self, 'filename', None) 
+        if file_path is None:
+            file_path = getattr(self, '_image_file', None)
+
+        if not file_path or not os.path.exists(file_path):
+            print(f"DEBUG: Impossibile trovare il file fisico: {file_path}")
+            self.statusBar().showMessage("Errore: Percorso file non trovato.")
+            return
+            
+        print(f"DEBUG: Lettura OpenCV dal disco: {file_path}")
+
+        # 2. Lettura robusta (Windows-safe) e conversione
+        # Legge i byte grezzi in NumPy e li fa decodificare a OpenCV in formato BGR
+        img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
         
-        if getattr(self, 'image_data', None) is None:
-            print("DEBUG: Nessun image_data trovato.")
+        if img_arr is None:
+            print("DEBUG: Fallimento decodifica immagine.")
             return
 
-        from labelme import utils
-        img_arr = utils.img_data_to_arr(self.image_data)
-        gray = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
+        # OpenCV legge in BGR, convertiamo in scala di grigi
+        gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
         
+        # 3. Rilevamento LSD
         lsd = cv2.createLineSegmentDetector(0)
         lines = lsd.detect(gray)[0]
         
         if lines is None:
-            print("DEBUG: OpenCV ha restituito 0 segmenti.")
+            print("DEBUG: Nessun segmento rilevato.")
             return
             
-        print(f"DEBUG: Estratti {len(lines)} micro-segmenti grezzi. Filtraggio in corso...")
-        
-        # --- 1. FILTRAGGIO DEL RUMORE ---
-        min_length = 30.0  # Scarta i segmenti più corti di 30 pixel
+        # 4. Filtraggio euclideo del rumore di fondo
+        min_length = 30.0  # Soglia per i micro-segmenti
         filtered_lines = []
-        
         for line in lines:
             x1, y1, x2, y2 = line[0]
             length = math.hypot(x2 - x1, y2 - y1)
             if length >= min_length:
-                # Salviamo anche la lunghezza per un eventuale ordinamento
                 filtered_lines.append((length, line[0]))
                 
-        print(f"DEBUG: Segmenti validi dopo il filtro: {len(filtered_lines)}.")
-        
-        # --- 2. PROTEZIONE DELLA UI (ORDINAMENTO) ---
-        max_gui_lines = 800  # Oltre questo numero PyQt inizia a rallentare
+        # 5. Protezione per il rendering di PyQt5
+        max_gui_lines = 800
         if len(filtered_lines) > max_gui_lines:
-            print(f"DEBUG: Troppe linee. Ordino e mantengo le {max_gui_lines} più lunghe.")
-            # Ordina in modo decrescente basandosi sulla lunghezza calcolata
             filtered_lines.sort(key=lambda x: x[0], reverse=True)
             filtered_lines = filtered_lines[:max_gui_lines]
 
-        # --- 3. INIEZIONE GRAFICA SICURA ---
+        # 6. Iniezione nel Canvas
         self.canvas.deSelectShape()
         
         for length, line_coords in filtered_lines:
             x1, y1, x2, y2 = line_coords
-            
-            shape = Shape(label="Linea", shape_type="line")
+            shape = Shape(label="Linee", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
             shape.close() 
-            
             self.canvas.shapes.append(shape)
             self.labelList.addShape(shape)
             
         self.canvas.update()
         self.setDirty() 
-        
-        msg = f"Iniettati {len(filtered_lines)} segmenti principali."
+        msg = f"Iniettati {len(filtered_lines)} segmenti validi."
         self.statusBar().showMessage(msg)
         print(f"DEBUG: {msg}")
+        
+       
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
