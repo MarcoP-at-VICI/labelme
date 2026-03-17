@@ -795,30 +795,45 @@ class MainWindow(QtWidgets.QMainWindow):
             edit_menu=edit_menu,
         )
     def auto_detect_lines(self):
-        """Estrae i segmenti LSD leggendo l'immagine direttamente dal disco."""
+        """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
+        import math
+        import os
+        import numpy as np
+        import cv2
+        from qtpy import QtCore
+        from labelme.shape import Shape
+        
         print("DEBUG: Avvio auto-detect...") 
 
-        # 1. Recupero dinamico del percorso del file aperto
-        file_path = getattr(self, 'filename', None) 
-        if file_path is None:
-            file_path = getattr(self, '_image_file', None)
+        # 1. Cacciatore di variabili: cerchiamo in tutti i nomi usati storicamente da LabelMe
+        file_path = None
+        possibili_variabili = [
+            'imagePath', 'image_path', '_image_path', 
+            'filename', '_filename', 'filePath', '_image_file'
+        ]
+        
+        for var_name in possibili_variabili:
+            val = getattr(self, var_name, None)
+            # Se la variabile è una stringa e corrisponde a un file reale sul disco
+            if isinstance(val, str) and os.path.exists(val):
+                file_path = val
+                print(f"DEBUG: Percorso trovato nella variabile 'self.{var_name}': {file_path}")
+                break
 
-        if not file_path or not os.path.exists(file_path):
-            print(f"DEBUG: Impossibile trovare il file fisico: {file_path}")
-            self.statusBar().showMessage("Errore: Percorso file non trovato.")
+        if not file_path:
+            print("DEBUG: Impossibile trovare il file fisico in nessuna variabile nota.")
+            self.statusBar().showMessage("Errore: Percorso file non trovato in memoria.")
             return
             
-        print(f"DEBUG: Lettura OpenCV dal disco: {file_path}")
+        print(f"DEBUG: Lettura OpenCV dal disco confermata.")
 
-        # 2. Lettura robusta (Windows-safe) e conversione
-        # Legge i byte grezzi in NumPy e li fa decodificare a OpenCV in formato BGR
+        # 2. Lettura robusta (Windows-safe) e decodifica
         img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
         
         if img_arr is None:
-            print("DEBUG: Fallimento decodifica immagine.")
+            print("DEBUG: Fallimento decodifica immagine da OpenCV.")
             return
 
-        # OpenCV legge in BGR, convertiamo in scala di grigi
         gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
         
         # 3. Rilevamento LSD
@@ -829,8 +844,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print("DEBUG: Nessun segmento rilevato.")
             return
             
-        # 4. Filtraggio euclideo del rumore di fondo
-        min_length = 30.0  # Soglia per i micro-segmenti
+        # 4. Filtraggio euclideo per rimuovere il rumore
+        min_length = 30.0 
         filtered_lines = []
         for line in lines:
             x1, y1, x2, y2 = line[0]
@@ -838,7 +853,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if length >= min_length:
                 filtered_lines.append((length, line[0]))
                 
-        # 5. Protezione per il rendering di PyQt5
+        # 5. Protezione interfaccia PyQt5
         max_gui_lines = 800
         if len(filtered_lines) > max_gui_lines:
             filtered_lines.sort(key=lambda x: x[0], reverse=True)
@@ -849,7 +864,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         for length, line_coords in filtered_lines:
             x1, y1, x2, y2 = line_coords
-            shape = Shape(label="Linee", shape_type="line")
+            shape = Shape(label="Linea", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
             shape.close() 
