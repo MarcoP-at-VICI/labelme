@@ -795,49 +795,68 @@ class MainWindow(QtWidgets.QMainWindow):
             edit_menu=edit_menu,
         )
     def auto_detect_lines(self):
-        """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
-        # Corretto l'accesso all'attributo incapsulato _image
-        # 1. Controlla che i dati dell'immagine esistano
-        print("DEBUG: Avvio auto-detect...")
-        if not hasattr(self, 'image_data') or self.image_data is None:
+       """Estrae i segmenti LSD con filtraggio del rumore e protezione GUI."""
+        import math
+        print("DEBUG: Avvio auto-detect...") 
+        
+        if getattr(self, 'image_data', None) is None:
+            print("DEBUG: Nessun image_data trovato.")
             return
 
-        # 2. Importa le utility interne di LabelMe
         from labelme import utils
-        
-        # 3. Converte i byte grezzi in un array NumPy RGB
         img_arr = utils.img_data_to_arr(self.image_data)
-        
-        # 4. Ora img_arr è un numpy.ndarray! Possiamo passarlo a OpenCV
         gray = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
         
         lsd = cv2.createLineSegmentDetector(0)
         lines = lsd.detect(gray)[0]
         
-        if lines is not None:
+        if lines is None:
             print("DEBUG: OpenCV ha restituito 0 segmenti.")
-            self.statusBar().showMessage("Nessuna linea rilevata da OpenCV.")
             return
             
-        print(f"DEBUG: Trovati {len(lines)} segmenti. Iniezione nel canvas in corso...")
+        print(f"DEBUG: Estratti {len(lines)} micro-segmenti grezzi. Filtraggio in corso...")
         
-        # Deseleziona eventuali shape attive per evitare conflitti visivi
-        self.canvas.deSelectShape()
+        # --- 1. FILTRAGGIO DEL RUMORE ---
+        min_length = 30.0  # Scarta i segmenti più corti di 30 pixel
+        filtered_lines = []
+        
         for line in lines:
             x1, y1, x2, y2 = line[0]
+            length = math.hypot(x2 - x1, y2 - y1)
+            if length >= min_length:
+                # Salviamo anche la lunghezza per un eventuale ordinamento
+                filtered_lines.append((length, line[0]))
+                
+        print(f"DEBUG: Segmenti validi dopo il filtro: {len(filtered_lines)}.")
+        
+        # --- 2. PROTEZIONE DELLA UI (ORDINAMENTO) ---
+        max_gui_lines = 800  # Oltre questo numero PyQt inizia a rallentare
+        if len(filtered_lines) > max_gui_lines:
+            print(f"DEBUG: Troppe linee. Ordino e mantengo le {max_gui_lines} più lunghe.")
+            # Ordina in modo decrescente basandosi sulla lunghezza calcolata
+            filtered_lines.sort(key=lambda x: x[0], reverse=True)
+            filtered_lines = filtered_lines[:max_gui_lines]
+
+        # --- 3. INIEZIONE GRAFICA SICURA ---
+        self.canvas.deSelectShape()
+        
+        for length, line_coords in filtered_lines:
+            x1, y1, x2, y2 = line_coords
             
-            shape = Shape(label="pista_elettrica", shape_type="line")
+            shape = Shape(label="Linea", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
-            shape.close() # FONDAMENTALE: dice a LabelMe che la geometria è finita
+            shape.close() 
             
-            self.labelList.addShape(shape)
             self.canvas.shapes.append(shape)
-        
+            self.labelList.addShape(shape)
+            
         self.canvas.update()
-        self.setDirty() # Attiva il pulsante "Save"
-        self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
-        print("DEBUG: Aggiornamento canvas completato con successo.")
+        self.setDirty() 
+        
+        msg = f"Iniettati {len(filtered_lines)} segmenti principali."
+        self.statusBar().showMessage(msg)
+        print(f"DEBUG: {msg}")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
