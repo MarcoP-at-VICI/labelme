@@ -797,34 +797,36 @@ class MainWindow(QtWidgets.QMainWindow):
     def auto_detect_lines(self):
         """Estrae i segmenti usando l'algoritmo LSD di OpenCV."""
         # Corretto l'accesso all'attributo incapsulato _image
-        if getattr(self, '_image', None) is None:
+        # 1. Controlla che i dati dell'immagine esistano
+        if not hasattr(self, 'image_data') or self.image_data is None:
             return
+
+        # 2. Importa le utility interne di LabelMe
+        from labelme import utils
         
-        # LabelMe memorizza self.image come array NumPy RGB
-        gray = cv2.cvtColor(self._image, cv2.COLOR_RGB2GRAY)
+        # 3. Converte i byte grezzi in un array NumPy RGB
+        img_arr = utils.img_data_to_arr(self.image_data)
         
-        # Inizializzazione del Line Segment Detector
+        # 4. Ora img_arr è un numpy.ndarray! Possiamo passarlo a OpenCV
+        gray = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
+        
         lsd = cv2.createLineSegmentDetector(0)
         lines = lsd.detect(gray)[0]
         
         if lines is not None:
-            # Per evitare crash dell'interfaccia, aggiungiamo gli shape in batch
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 
-                # Creazione dell'entità geometrica primitiva
-                shape = Shape(label="Linea", shape_type="line")
+                shape = Shape(label="pista_elettrica", shape_type="line")
                 shape.addPoint(QtCore.QPointF(x1, y1))
                 shape.addPoint(QtCore.QPointF(x2, y2))
                 
-                # Aggiunta alle strutture dati grafiche di LabelMe
                 self.labelList.addShape(shape)
                 self.canvas.shapes.append(shape)
-        
-        # Forza il rendering grafico sul canvas
-        self.canvas.update()
-        self.setDirty()
-        self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
+            
+            self.canvas.update()
+            self.setDirty()
+            self.statusBar().showMessage(f"Rilevati {len(lines)} segmenti topologici.")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
