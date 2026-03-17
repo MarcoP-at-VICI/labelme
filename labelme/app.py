@@ -870,14 +870,23 @@ class MainWindow(QtWidgets.QMainWindow):
             shape = Shape(label="pista_elettrica", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
-            shape.close() 
-            
+           
+
+            # --- ATTRIBUTI FONDAMENTALI PER IL SALVATAGGIO JSON ---
+            shape.group_id = None
+            shape.description = ""
+            shape.flags = {}
+            # ------------------------------------------------------
+             shape.close() 
             # Aggiunge al canvas
             target_canvas.shapes.append(shape)
             
             # Aggiunge alla lista laterale (con un controllo di sicurezza 
             # nel caso anche labelList sia stata incapsulata)
-            if hasattr(self, 'labelList'):
+            # Usa il metodo nativo della finestra per registrare l'annotazione
+            if hasattr(self, 'addLabel'):
+                self.addLabel(shape)
+            elif hasattr(self, 'labelList'):
                 self.labelList.addShape(shape)
         
         # --- SINCRONIZZAZIONE STATO INTERNO ---
