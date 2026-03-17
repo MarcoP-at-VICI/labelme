@@ -795,7 +795,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit_menu=edit_menu,
         )
     def auto_detect_lines(self):
-       """Estrae i segmenti LSD con filtraggio del rumore e protezione GUI."""
+        """Estrae i segmenti LSD con filtraggio del rumore e protezione GUI."""
         import math
         print("DEBUG: Avvio auto-detect...") 
         
