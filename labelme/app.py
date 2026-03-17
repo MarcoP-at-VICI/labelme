@@ -796,7 +796,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
     def auto_detect_lines(self):
         """Estrae i segmenti LSD con filtraggio del rumore e protezione GUI."""
-        import math
+        
         print("DEBUG: Avvio auto-detect...") 
         
         if getattr(self, 'image_data', None) is None:
