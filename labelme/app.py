@@ -801,7 +801,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         
         # LabelMe memorizza self.image come array NumPy RGB
-        gray = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        gray = cv2.cvtColor(self._image, cv2.COLOR_RGB2GRAY)
         
         # Inizializzazione del Line Segment Detector
         lsd = cv2.createLineSegmentDetector(0)
