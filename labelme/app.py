@@ -877,7 +877,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shape.description = ""
             shape.flags = {}
             # ------------------------------------------------------
-             shape.close() 
+            shape.close() 
             # Aggiunge al canvas
             target_canvas.shapes.append(shape)
             
