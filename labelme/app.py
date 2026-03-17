@@ -859,19 +859,28 @@ class MainWindow(QtWidgets.QMainWindow):
             filtered_lines.sort(key=lambda x: x[0], reverse=True)
             filtered_lines = filtered_lines[:max_gui_lines]
 
-        # 6. Iniezione nel Canvas
-        self.canvas.deSelectShape()
+        # 6. Iniezione nel Canvas (Adattato alla nuova architettura)
+        # Puntiamo alla nuova variabile che contiene il canvas
+        target_canvas = self._canvas_widgets.canvas
+        
+        target_canvas.deSelectShape()
         
         for length, line_coords in filtered_lines:
             x1, y1, x2, y2 = line_coords
-            shape = Shape(label="Linea", shape_type="line")
+            shape = Shape(label="pista_elettrica", shape_type="line")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
             shape.close() 
-            self.canvas.shapes.append(shape)
-            self.labelList.addShape(shape)
             
-        self.canvas.update()
+            # Aggiunge al canvas
+            target_canvas.shapes.append(shape)
+            
+            # Aggiunge alla lista laterale (con un controllo di sicurezza 
+            # nel caso anche labelList sia stata incapsulata)
+            if hasattr(self, 'labelList'):
+                self.labelList.addShape(shape)
+            
+        target_canvas.update()
         self.setDirty() 
         msg = f"Iniettati {len(filtered_lines)} segmenti validi."
         self.statusBar().showMessage(msg)
