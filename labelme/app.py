@@ -1051,7 +1051,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
 
-    target_canvas = self._canvas_widgets.canvas
+        target_canvas = self._canvas_widgets.canvas
         label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
         
         if not label_widget:
