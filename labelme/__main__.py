@@ -299,7 +299,7 @@ def main():
         # Crea un rettangolo semplice se l'immagine manca
         splash_pix = QtGui.QPixmap(600, 400)
         splash_pix.fill(QtGui.QColor("white"))
-    else:
+   else:
         # Scaliamo l'icona per farla diventare uno splash screen (es. 500px larghezza)
         splash_pix = icon_pix.pixmap(500, 500)
 
