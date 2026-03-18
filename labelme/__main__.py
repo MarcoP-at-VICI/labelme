@@ -286,6 +286,8 @@ def main():
         f"{osp.dirname(osp.abspath(__file__))}/translate",
     )
     app = QtWidgets.QApplication(sys.argv)
+
+    
     # --- INIZIO AGGIUNTA SPLASH SCREEN ---
     # Carica l'immagine (assicurati che il file sia nella stessa cartella o specifica il path)
     # Esempio: "splash_vici.png"
@@ -293,14 +295,26 @@ def main():
     splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     
     # Opzionale: aggiungi un messaggio di testo sullo splash
+   if icon_pix.isNull():
+        # Crea un rettangolo semplice se l'immagine manca
+        splash_pix = QtGui.QPixmap(600, 400)
+        splash_pix.fill(QtGui.QColor("white"))
+    else:
+        # Scaliamo l'icona per farla diventare uno splash screen (es. 500px larghezza)
+        splash_pix = icon_pix.pixmap(500, 500)
+
+    splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
-    splash.showMessage("Caricamento Tool Ricerca Vanishing Points...", 
+    
+    # Messaggio di benvenuto per il tuo progetto di ricerca
+    splash.showMessage("Caricamento Deep Vanishing Point Tool...", 
                        QtCore.Qt.AlignBottom | QtCore.Qt.AlignCenter, 
                        QtCore.Qt.black)
     
-    # Processa gli eventi per mostrare lo splash immediatamente
-    app.processEvents()
+    app.processEvents() # Forza la visualizzazione immediata
     # --- FINE AGGIUNTA SPLASH SCREEN ---
+
+    
     app.setStyle("Fusion")  # for consistent appearance across platforms
     # Force light mode to avoid dark mode UI issues (e.g., invisible icons)
     app.setPalette(QtWidgets.QStyleFactory.create("Fusion").standardPalette())
