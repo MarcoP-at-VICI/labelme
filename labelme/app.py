@@ -1018,7 +1018,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for coords in raw_coords:
             x1, y1, x2, y2 = coords
-            shape = Shape(label="Linea", shape_type="polygon")
+            # Creiamo un'etichetta univoca usando l'indice
+            unique_label = f"Linea_{idx:03d}"
+                
+            shape = Shape(label=unique_label, shape_type="polygon")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
 
