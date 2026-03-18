@@ -1049,23 +1049,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
 
     def sync_selection_to_list(self, shapes):
-        """Sincronizza la selezione del Canvas con la LabelList (Annotation List)."""
-        if not shapes or not hasattr(self, 'labelList'):
+        """Evidenzia nella lista solo la riga selezionata sul canvas."""
+        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        if not shapes or not label_widget:
             return
         
-        # Deseleziona tutto prima
-        self.labelList.clearSelection()
-        
-        # Prendi l'ultima shape selezionata nel canvas
+        label_widget.clearSelection()
         last_shape = shapes[-1]
         
-        # Cerca il corrispettivo nella lista a destra
-        for i in range(self.labelList.count()):
-            item = self.labelList.item(i)
-            # LabelMe salva il riferimento alla shape nell'item
-            if getattr(item, 'shape', None) == last_shape:
+        for i in range(label_widget.count()):
+            item = label_widget.item(i)
+            # In LabelMe l'item della lista tiene il riferimento alla shape
+            if getattr(item, 'shape', None) == last_shape or item.data(QtCore.Qt.UserRole) == last_shape:
                 item.setSelected(True)
-                self.labelList.scrollToItem(item)
+                label_widget.scrollToItem(item)
                 break
 
     
