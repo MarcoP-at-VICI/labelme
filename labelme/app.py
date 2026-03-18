@@ -545,7 +545,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text=self.tr("Projections Lines"),
             slot=self.project_lines_preview, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+P",
-            icon=NULL, # Using a default icon available in LabelMe
+            icon="Projection_and_rejection.svg", # Using a default icon available in LabelMe
             tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
@@ -555,7 +555,7 @@ class MainWindow(QtWidgets.QMainWindow):
             slot=self.export_projected_to_txt, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+K",
             icon=NULL, # Using a default icon available in LabelMe
-            tip=self.tr("Salva le linee proiettate"),
+            tip=self.tr("Salva le linee proiettate in txt"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
         open_next_img = action(
