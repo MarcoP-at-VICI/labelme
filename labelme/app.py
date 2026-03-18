@@ -208,8 +208,8 @@ class MainWindow(QtWidgets.QMainWindow):
         output_dir: str | None = None,
     ) -> None:
         super().__init__()
-        # self.setWindowTitle(__appname__)
-        self.setWindowTitle("vvLabeler") #Forzo il nome della finestra
+        self.setWindowTitle(__appname__)
+        
 
         self._config_file, self._config = self._load_config(
             config_file=config_file, config_overrides=config_overrides
@@ -2341,12 +2341,10 @@ class MainWindow(QtWidgets.QMainWindow):
         fileDialog = FileDialogPreview(self)
         fileDialog.setFileMode(FileDialogPreview.ExistingFile)
         fileDialog.setNameFilter(filters)
-        # fileDialog.setWindowTitle(
-        #     self.tr("%s - Choose Image or Label file") % __appname__,
-        # )
         fileDialog.setWindowTitle(
-            self.tr("%s - Choose Image or Label file - vvLabeler"),
+            self.tr("%s - Choose Image or Label file") % __appname__,
         )
+        
         fileDialog.setWindowFilePath(path)
         fileDialog.setViewMode(FileDialogPreview.Detail)
         if fileDialog.exec_():
