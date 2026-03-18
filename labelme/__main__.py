@@ -336,6 +336,9 @@ def main():
     with contextlib.redirect_stderr(new_target=_LoggerIO()):
         win.show()
         win.raise_()
+        # Chiude lo splash screen quando la finestra principale è visibile
+        splash.finish(win)
+        
         sys.exit(app.exec_())
 
 
