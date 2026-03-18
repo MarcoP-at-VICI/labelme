@@ -993,26 +993,42 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveFile()
         except Exception as e:
             print(f"Nota: Salvataggio JSON saltato o fallito: {e}") # Apre la finestra di salvataggio standard o salva se già impostato
-        # 2. ESPORTAZIONE TXT ESTESA
-        # Usiamo QtWidgets.QFileDialog per evitare il NameError
-        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Esporta coordinate", "", "TXT (*.txt)")
-        if not save_path: return
-
+        # 2. PREPARAZIONE DATI PER TXT
+        lines_output = [] # Inizializzazione fondamentale per evitare NameError
+        
         try:
-            lines = []
-            for shape in self._canvas_widgets.canvas.shapes:
-                if len(shape.points) >= 2:
-                    p1, p2 = shape.points[0], shape.points[-1]
-                    # Formato: x1 y1 x2 y2
-                    lines_output.append(f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}")
+            # Recuperiamo le forme dal canvas
+            canvas = self._canvas_widgets.canvas
+            if not canvas or not hasattr(canvas, 'shapes'):
+                self.statusBar().showMessage("Errore: Canvas non accessibile.")
+                return
 
-            with open(save_path, 'w', encoding='utf-8') as f:
-                f.write("\n".join(lines_output))
-                
-            self.statusBar().showMessage(f"Dati esportati correttamente in TXT.")
+            for shape in canvas.shapes:
+                if len(shape.points) >= 2:
+                    p1 = shape.points[0]
+                    p2 = shape.points[-1]
+                    # Formato x1 y1 x2 y2 con 2 decimali
+                    line_str = f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}"
+                    lines_output.append(line_str)
+
+            if not lines_output:
+                self.statusBar().showMessage("Nessuna linea valida da esportare.")
+                return
+
+            # 3. DIALOGO DI SALVATAGGIO
+            save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+                self, "Esporta coordinate estese (TXT)", "", "TXT (*.txt)"
+            )
+            
+            if save_path:
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    f.write("\n".join(lines_output))
+                self.statusBar().showMessage(f"Esportate {len(lines_output)} linee in TXT.")
             
         except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {e}")
+            # Messaggio di errore dettagliato per il debugging
+            QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
+            print(f"DEBUG ERROR: {e}")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
