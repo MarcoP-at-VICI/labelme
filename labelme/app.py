@@ -1114,11 +1114,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Aggiorna il Canvas e la lista etichette
         canvas.shapes = merged_list
-        self.labelList.clear()
-        for s in merged_list:
-            self.addLabel(s)
+        # In LabelMe il widget della lista etichette è solitamente self.labelList
+        # ma dobbiamo assicurarci di svuotarlo e riempirlo correttamente
+        if hasattr(self, 'labelList'):
+            self.labelList.clear()
+            for s in merged_list:
+                # addLabel è il metodo standard di MainWindow per sincronizzare UI e Canvas
+                self.addLabel(s)
+        elif hasattr(self, 'label_list'): # Backup per versioni alternative
+            self.label_list.clear()
+            for s in merged_list:
+                self.addLabel(s)
         
         canvas.update()
+        self.setDirty() # Indica che il file è stato modificato e va salvato
         self.statusBar().showMessage(f"Merge completato: ridotte a {len(merged_list)} linee.")
  
     
