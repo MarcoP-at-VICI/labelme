@@ -833,8 +833,114 @@ class MainWindow(QtWidgets.QMainWindow):
             context_menu=context_menu,
             edit_menu=edit_menu,
         )
+    # def auto_detect_lines(self):
+    #     """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
+    #     import math
+    #     import os
+    #     import numpy as np
+    #     import cv2
+    #     from qtpy import QtCore
+    #     from labelme.shape import Shape
+        
+    #     print("DEBUG: Avvio auto-detect...") 
+
+    #     # 1. Cacciatore di variabili: cerchiamo in tutti i nomi usati storicamente da LabelMe
+    #     file_path = None
+    #     possibili_variabili = [
+    #         'imagePath', 'image_path', '_image_path', 
+    #         'filename', '_filename', 'filePath', '_image_file'
+    #     ]
+        
+    #     for var_name in possibili_variabili:
+    #         val = getattr(self, var_name, None)
+    #         # Se la variabile è una stringa e corrisponde a un file reale sul disco
+    #         if isinstance(val, str) and os.path.exists(val):
+    #             file_path = val
+    #             print(f"DEBUG: Percorso trovato nella variabile 'self.{var_name}': {file_path}")
+    #             break
+
+    #     if not file_path:
+    #         print("DEBUG: Impossibile trovare il file fisico in nessuna variabile nota.")
+    #         self.statusBar().showMessage("Errore: Percorso file non trovato in memoria.")
+    #         return
+            
+    #     print(f"DEBUG: Lettura OpenCV dal disco confermata.")
+
+    #     # 2. Lettura robusta (Windows-safe) e decodifica
+    #     img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        
+    #     if img_arr is None:
+    #         print("DEBUG: Fallimento decodifica immagine da OpenCV.")
+    #         return
+
+    #     gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
+        
+    #     # 3. Rilevamento LSD
+    #     lsd = cv2.createLineSegmentDetector(0)
+    #     lines = lsd.detect(gray)[0]
+        
+    #     if lines is None:
+    #         print("DEBUG: Nessun segmento rilevato.")
+    #         return
+            
+    #     # 4. Filtraggio euclideo per rimuovere il rumore
+    #     min_length = 30.0 
+    #     filtered_lines = []
+    #     for line in lines:
+    #         x1, y1, x2, y2 = line[0]
+    #         length = math.hypot(x2 - x1, y2 - y1)
+    #         if length >= min_length:
+    #             filtered_lines.append((length, line[0]))
+                
+    #     # 5. Protezione interfaccia PyQt5
+    #     max_gui_lines = 800
+    #     if len(filtered_lines) > max_gui_lines:
+    #         filtered_lines.sort(key=lambda x: x[0], reverse=True)
+    #         filtered_lines = filtered_lines[:max_gui_lines]
+
+    #     # 6. Iniezione nel Canvas (Adattato alla nuova architettura)
+    #     # Puntiamo alla nuova variabile che contiene il canvas
+    #     target_canvas = self._canvas_widgets.canvas
+        
+    #     target_canvas.deSelectShape()
+        
+    #     for length, line_coords in filtered_lines:
+    #         x1, y1, x2, y2 = line_coords
+    #         # shape = Shape(label="Linea", shape_type="line")
+    #         shape = Shape(label="Linea", shape_type="polygon") # cambiamo shape_type da "line" a "polygon". Un polygin può avere un numero variabile di punti (da 2 a infiniti).
+    #         shape.addPoint(QtCore.QPointF(x1, y1))
+    #         shape.addPoint(QtCore.QPointF(x2, y2))
+           
+
+    #         # --- ATTRIBUTI FONDAMENTALI PER IL SALVATAGGIO JSON ---
+    #         shape.group_id = None
+    #         shape.description = ""
+    #         shape.flags = {}
+    #         # ------------------------------------------------------
+    #         shape.close() 
+    #         # Aggiunge al canvas
+    #         target_canvas.shapes.append(shape)
+            
+    #         # Aggiunge alla lista laterale (con un controllo di sicurezza 
+    #         # nel caso anche labelList sia stata incapsulata)
+    #         # Usa il metodo nativo della finestra per registrare l'annotazione
+    #         if hasattr(self, 'addLabel'):
+    #             self.addLabel(shape)
+    #         elif hasattr(self, 'labelList'):
+    #             self.labelList.addShape(shape)
+        
+    #     # --- SINCRONIZZAZIONE STATO INTERNO ---
+    #     # FONDAMENTALE: Salva le forme nel sistema Undo/Redo per evitare IndexError
+    #     if hasattr(target_canvas, 'storeShapes'):
+    #         target_canvas.storeShapes()       
+            
+    #     target_canvas.update()
+    #     self.setDirty() 
+    #     msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
+    #     self.statusBar().showMessage(msg)
+    #     print(f"DEBUG: {msg}")
     def auto_detect_lines(self):
-        """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
+        """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
         import math
         import os
         import numpy as np
@@ -842,104 +948,121 @@ class MainWindow(QtWidgets.QMainWindow):
         from qtpy import QtCore
         from labelme.shape import Shape
         
-        print("DEBUG: Avvio auto-detect...") 
+        print("DEBUG: Avvio auto-detect con Snap...") 
 
-        # 1. Cacciatore di variabili: cerchiamo in tutti i nomi usati storicamente da LabelMe
+        # 1. Ricerca del file path (Invariato)
         file_path = None
-        possibili_variabili = [
-            'imagePath', 'image_path', '_image_path', 
-            'filename', '_filename', 'filePath', '_image_file'
-        ]
-        
+        possibili_variabili = ['imagePath', 'image_path', '_image_path', 'filename', '_filename', 'filePath', '_image_file']
         for var_name in possibili_variabili:
             val = getattr(self, var_name, None)
-            # Se la variabile è una stringa e corrisponde a un file reale sul disco
             if isinstance(val, str) and os.path.exists(val):
                 file_path = val
-                print(f"DEBUG: Percorso trovato nella variabile 'self.{var_name}': {file_path}")
                 break
 
         if not file_path:
-            print("DEBUG: Impossibile trovare il file fisico in nessuna variabile nota.")
-            self.statusBar().showMessage("Errore: Percorso file non trovato in memoria.")
+            self.statusBar().showMessage("Errore: Percorso file non trovato.")
             return
-            
-        print(f"DEBUG: Lettura OpenCV dal disco confermata.")
 
-        # 2. Lettura robusta (Windows-safe) e decodifica
+        # 2. Lettura e conversione (Invariato)
         img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
-        
-        if img_arr is None:
-            print("DEBUG: Fallimento decodifica immagine da OpenCV.")
-            return
-
+        if img_arr is None: return
         gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
         
         # 3. Rilevamento LSD
         lsd = cv2.createLineSegmentDetector(0)
         lines = lsd.detect(gray)[0]
-        
-        if lines is None:
-            print("DEBUG: Nessun segmento rilevato.")
-            return
+        if lines is None: return
             
-        # 4. Filtraggio euclideo per rimuovere il rumore
+        # 4. Filtraggio e preparazione lista coordinate
         min_length = 30.0 
-        filtered_lines = []
+        raw_coords = []
         for line in lines:
             x1, y1, x2, y2 = line[0]
             length = math.hypot(x2 - x1, y2 - y1)
             if length >= min_length:
-                filtered_lines.append((length, line[0]))
-                
-        # 5. Protezione interfaccia PyQt5
-        max_gui_lines = 800
-        if len(filtered_lines) > max_gui_lines:
-            filtered_lines.sort(key=lambda x: x[0], reverse=True)
-            filtered_lines = filtered_lines[:max_gui_lines]
-
-        # 6. Iniezione nel Canvas (Adattato alla nuova architettura)
-        # Puntiamo alla nuova variabile che contiene il canvas
-        target_canvas = self._canvas_widgets.canvas
+                raw_coords.append([x1, y1, x2, y2])
         
+        # --- [INIZIO LOGICA SNAP] ---
+        # Uniamo gli estremi che sono molto vicini (Epsilon pixel)
+        # Questo garantisce la contiguità geometrica per i Vanishing Points
+        snap_epsilon = 5.0 
+        for i in range(len(raw_coords)):
+            for j in range(i + 1, len(raw_coords)):
+                # Punti del segmento i: (A, B), Punti del segmento j: (C, D)
+                # Confrontiamo tutte le combinazioni: A-C, A-D, B-C, B-D
+                pts_i = [(0,1), (2,3)] # indici x,y per l'inizio e la fine di i
+                pts_j = [(0,1), (2,3)] # indici x,y per l'inizio e la fine di j
+                
+                for idx_i in pts_i:
+                    for idx_j in pts_j:
+                        dist = math.hypot(raw_coords[i][idx_i[0]] - raw_coords[j][idx_j[0]], 
+                                          raw_coords[i][idx_i[1]] - raw_coords[j][idx_j[1]])
+                        
+                        if dist < snap_epsilon:
+                            # Eseguiamo lo Snap: il punto del segmento j 
+                            # assume le coordinate esatte del segmento i
+                            raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
+                            raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
+        # --- [FINE LOGICA SNAP] ---
+
+        # 5. Iniezione nel Canvas
+        target_canvas = self._canvas_widgets.canvas
         target_canvas.deSelectShape()
         
-        for length, line_coords in filtered_lines:
-            x1, y1, x2, y2 = line_coords
-            # shape = Shape(label="Linea", shape_type="line")
-            shape = Shape(label="Linea", shape_type="polygon") # cambiamo shape_type da "line" a "polygon". Un polygin può avere un numero variabile di punti (da 2 a infiniti).
+        # Limite per performance GUI
+        raw_coords = raw_coords[:800]
+
+        for coords in raw_coords:
+            x1, y1, x2, y2 = coords
+            shape = Shape(label="Linea", shape_type="polygon")
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
-           
 
-            # --- ATTRIBUTI FONDAMENTALI PER IL SALVATAGGIO JSON ---
             shape.group_id = None
             shape.description = ""
             shape.flags = {}
-            # ------------------------------------------------------
             shape.close() 
-            # Aggiunge al canvas
+
             target_canvas.shapes.append(shape)
             
-            # Aggiunge alla lista laterale (con un controllo di sicurezza 
-            # nel caso anche labelList sia stata incapsulata)
-            # Usa il metodo nativo della finestra per registrare l'annotazione
             if hasattr(self, 'addLabel'):
                 self.addLabel(shape)
             elif hasattr(self, 'labelList'):
                 self.labelList.addShape(shape)
         
-        # --- SINCRONIZZAZIONE STATO INTERNO ---
-        # FONDAMENTALE: Salva le forme nel sistema Undo/Redo per evitare IndexError
+        # 6. Sincronizzazione Selezione (Punto 2 della tua richiesta)
+        # Colleghiamo il segnale del canvas per evidenziare la riga corrispondente
+        try:
+            target_canvas.selectionChanged.connect(self.sync_selection_to_list)
+        except:
+            pass # Evita errori se già connesso
+
         if hasattr(target_canvas, 'storeShapes'):
             target_canvas.storeShapes()       
             
         target_canvas.update()
         self.setDirty() 
-        msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
-        self.statusBar().showMessage(msg)
-        print(f"DEBUG: {msg}")
+        self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
 
+    def sync_selection_to_list(self, shapes):
+        """Sincronizza la selezione del Canvas con la LabelList (Annotation List)."""
+        if not shapes or not hasattr(self, 'labelList'):
+            return
+        
+        # Deseleziona tutto prima
+        self.labelList.clearSelection()
+        
+        # Prendi l'ultima shape selezionata nel canvas
+        last_shape = shapes[-1]
+        
+        # Cerca il corrispettivo nella lista a destra
+        for i in range(self.labelList.count()):
+            item = self.labelList.item(i)
+            # LabelMe salva il riferimento alla shape nell'item
+            if getattr(item, 'shape', None) == last_shape:
+                item.setSelected(True)
+                self.labelList.scrollToItem(item)
+                break
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
