@@ -1050,7 +1050,9 @@ class MainWindow(QtWidgets.QMainWindow):
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
-
+            
+    def sync_selection_to_list(self):
+        """Sincronizza il Canvas con la lista laterale (Annotation List)."""
         target_canvas = self._canvas_widgets.canvas
         label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
         
