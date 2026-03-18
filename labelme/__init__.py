@@ -1,6 +1,6 @@
 import importlib.metadata
 
-__appname__ = "Labelme"
+__appname__ = "vvLabeler"
 
 # Semantic Versioning 2.0.0: https://semver.org/
 # 1. MAJOR version when you make incompatible API changes;
