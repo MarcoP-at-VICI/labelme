@@ -553,8 +553,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actionAutoDetect = action(
             text=self.tr("Save Projected Lines"),
             slot=self.export_projected_to_txt, # Ensure you've defined this method in the class!
-            shortcut="Ctrl+Shift+K",
-            icon=NULL, # Using a default icon available in LabelMe
+            shortcut="Ctrl+Shift+K", 
             tip=self.tr("Salva le linee proiettate in txt"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
