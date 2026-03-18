@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="540">
+  <defs>
+    <marker id="a" markerHeight=".5" markerWidth=".5" orient="auto" overflow="visible" viewBox="0 0 1 1">
+      <path fill="context-stroke" stroke="context-stroke" d="m3 0-4.5 2v-4Z"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="#000" stroke-width="2">
+   <path d="m384 282 19-11 11 19"/>
+   <path d="M114.3 461.7A95,95 0 0 0 77.5,425.6"/>
+   <path d="M432.4 365.4 238.5 29.5" stroke-dasharray="2 2"/>
+  </g>
+  <g stroke-width="6" marker-end="url(#a)">
+   <path d="M394.5 299.7 272.7 88.7" stroke="#c00000"/>
+   <path d="m32 509 527.9-304.8" stroke="#000"/>
+   <path d="m32 509 352.1-203.3" stroke="#00b050"/>
+   <path d="m32 509 229-420.2" stroke="#000"/>
+  </g>
+  <circle cx="32" cy="509" r="8"/>
+  <text x="110" y="426" font-family="Serif" font-size="48" font-style="italic">ϑ</text>
+  <g font-family="Serif" font-size="48" font-weight="bold">
+    <text x="474" y="318">b</text>
+    <text x="98" y="278">a</text>
+    <text x="232" y="442" fill="#00b050">a<tspan baseline-shift="sub" font-size="32" font-weight="normal">1</tspan></text>
+    <text x="351" y="179" fill="#c00000">a<tspan baseline-shift="sub" font-size="32" font-weight="normal">2</tspan></text>
+  </g>
+</svg>
