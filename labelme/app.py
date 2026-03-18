@@ -928,62 +928,62 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f"DEBUG: {msg}")
 
     def project_lines_preview(self):
-        """Proietta le linee esistenti ai bordi dell'immagine per preview visiva."""
+        """Proietta ogni singolo segmento delle polilinee ai bordi dell'immagine."""
         target_canvas = self._canvas_widgets.canvas
         if not target_canvas.pixmap:
             return
+            
         img_w = target_canvas.pixmap.width()
         img_h = target_canvas.pixmap.height()
         
-        if not target_canvas.shapes:
-            self.statusBar().showMessage("Nessuna linea da proiettare.")
-            return
-
+        new_projected_shapes = []
+        # Cicliamo sulle shapes esistenti
         for shape in target_canvas.shapes:
             if len(shape.points) < 2:
                 continue
-            p1, p2 = shape.points[0], shape.points[-1]
-            x1, y1 = p1.x(), p1.y()
-            x2, y2 = p2.x(), p2.y()
-
-            dx, dy = x2 - x1, y2 - y1
-            # x1, y1 = shape.points[0].x(), shape.points[0].y()
-            # x2, y2 = shape.points[1].x(), shape.points[1].y()
-
-            dx, dy = x2 - x1, y2 - y1
-            if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
-
-            # Calcolo intersezioni con i 4 bordi (t-values)
-            t_candidates = []
-            if abs(dx) > 1e-6:
-                t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
-            if abs(dy) > 1e-6:
-                t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
-
-            valid_pts = []
-            for t in t_candidates:
-                ix, iy = x1 + t * dx, y1 + t * dy
-                if -0.5 <= ix <= img_w + 0.5 and -0.5 <= iy <= img_h + 0.5:
-                    valid_pts.append((ix, iy))
             
-            if len(valid_pts) >= 2:
-                # Ordiniamo per distanza per evitare errori di precisione
-                valid_pts.sort(key=lambda p: (p[0], p[1]))
-                p_start, p_end = valid_pts[0], valid_pts[-1]
+            # Iteriamo su ogni coppia di punti della polilinea
+            for i in range(len(shape.points) - 1):
+                p1 = shape.points[i]
+                p2 = shape.points[i+1]
+                x1, y1 = p1.x(), p1.y()
+                x2, y2 = p2.x(), p2.y()
 
-                # Se era una polilinea, rimuoviamo i punti intermedi
-                while len(shape.points) > 2:
-                    shape.points.pop(1)
+                dx, dy = x2 - x1, y2 - y1
+                if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+
+                # Calcolo t-values per i 4 bordi
+                t_candidates = []
+                if abs(dx) > 1e-6:
+                    t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
+                if abs(dy) > 1e-6:
+                    t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
+
+                valid_pts = []
+                for t in t_candidates:
+                    ix, iy = x1 + t * dx, y1 + t * dy
+                    if -0.5 <= ix <= img_w + 0.5 and -0.5 <= iy <= img_h + 0.5:
+                        valid_pts.append((ix, iy))
                 
-                # Aggiorniamo i punti della shape nel canvas
-                shape.points[0].setX(p_start[0])
-                shape.points[0].setY(p_start[1])
-                shape.points[1].setX(p_end[0])
-                shape.points[1].setY(p_end[1])
+                if len(valid_pts) >= 2:
+                    valid_pts.sort(key=lambda p: (p[0], p[1]))
+                    ps, pe = valid_pts[0], valid_pts[-1]
+                    
+                    # Creiamo una nuova shape di tipo "line" per ogni proiezione
+                    new_shape = Shape(label=shape.label, shape_type="line")
+                    new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
+                    new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
+                    new_shape.group_id = shape.group_id
+                    new_shape.description = shape.description
+                    new_shape.flags = shape.flags
+                    new_shape.close()
+                    new_projected_shapes.append(new_shape)
 
+        # Sostituiamo le vecchie polilinee con i segmenti proiettati
+        target_canvas.shapes = new_projected_shapes
         target_canvas.update()
-        self.setDirty()
-        self.statusBar().showMessage("Preview Proiezione: Linee estese ai bordi.")
+        self.setDirty() 
+        self.statusBar().showMessage(f"Preview: Generati {len(new_projected_shapes)} segmenti proiettati.")
 
     def export_projected_to_txt(self):
         """Salva le linee attualmente visibili (estese) in formato TXT."""
