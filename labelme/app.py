@@ -930,6 +930,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def project_lines_preview(self):
         """Proietta le linee esistenti ai bordi dell'immagine per preview visiva."""
         target_canvas = self._canvas_widgets.canvas
+        if not target_canvas.pixmap:
+            return
         img_w = target_canvas.pixmap.width()
         img_h = target_canvas.pixmap.height()
         
@@ -938,11 +940,15 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         for shape in target_canvas.shapes:
-            if len(shape.points) != 2:
+            if len(shape.points) < 2:
                 continue
-            
-            x1, y1 = shape.points[0].x(), shape.points[0].y()
-            x2, y2 = shape.points[1].x(), shape.points[1].y()
+            p1, p2 = shape.points[0], shape.points[-1]
+            x1, y1 = p1.x(), p1.y()
+            x2, y2 = p2.x(), p2.y()
+
+            dx, dy = x2 - x1, y2 - y1
+            # x1, y1 = shape.points[0].x(), shape.points[0].y()
+            # x2, y2 = shape.points[1].x(), shape.points[1].y()
 
             dx, dy = x2 - x1, y2 - y1
             if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
@@ -964,6 +970,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Ordiniamo per distanza per evitare errori di precisione
                 valid_pts.sort(key=lambda p: (p[0], p[1]))
                 p_start, p_end = valid_pts[0], valid_pts[-1]
+
+                # Se era una polilinea, rimuoviamo i punti intermedi
+                while len(shape.points) > 2:
+                    shape.points.pop(1)
                 
                 # Aggiorniamo i punti della shape nel canvas
                 shape.points[0].setX(p_start[0])
@@ -977,7 +987,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def export_projected_to_txt(self):
         """Salva le linee attualmente visibili (estese) in formato TXT."""
-        save_path, _ = QFileDialog.getSaveFileName(self, "Esporta coordinate", "", "TXT (*.txt)")
+        #1. SALVATAGGIO NATIVO (JSON)
+        # Chiamiamo la funzione nativa di LabelMe per assicurarci che lo stato sia salvato
+        if self.dirty:
+            self.saveFile() # Apre la finestra di salvataggio standard o salva se già impostato
+        # 2. ESPORTAZIONE TXT ESTESA
+        # Usiamo QtWidgets.QFileDialog per evitare il NameError
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Esporta coordinate", "", "TXT (*.txt)")
         if not save_path: return
 
         try:
