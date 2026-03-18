@@ -290,7 +290,7 @@ def main():
     # Force light mode to avoid dark mode UI issues (e.g., invisible icons)
     app.setPalette(QtWidgets.QStyleFactory.create("Fusion").standardPalette())
     app.setApplicationName(__appname__)
-    app.setWindowIcon(newIcon("icon"))
+    app.setWindowIcon(newIcon("icona_vici.png"))
     app.installTranslator(translator)
     win = MainWindow(
         config_file=config_file,
