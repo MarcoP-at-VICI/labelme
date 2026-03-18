@@ -253,7 +253,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
-
+        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list) #attiva la selezione delle linee automatiche
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -1048,22 +1048,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
 
-    def sync_selection_to_list(self, shapes):
-        """Evidenzia nella lista solo la riga selezionata sul canvas."""
+    target_canvas = self._canvas_widgets.canvas
         label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        if not shapes or not label_widget:
+        
+        if not label_widget:
             return
+
+        # Recuperiamo le forme selezionate sul canvas
+        selected_shapes = target_canvas.selectedShapes
         
+        # Puliamo la selezione precedente nella lista
         label_widget.clearSelection()
-        last_shape = shapes[-1]
         
-        for i in range(label_widget.count()):
-            item = label_widget.item(i)
-            # In LabelMe l'item della lista tiene il riferimento alla shape
-            if getattr(item, 'shape', None) == last_shape or item.data(QtCore.Qt.UserRole) == last_shape:
-                item.setSelected(True)
-                label_widget.scrollToItem(item)
-                break
+        if selected_shapes:
+            # Prendiamo l'ultima forma cliccata
+            shape = selected_shapes[-1]
+            for i in range(label_widget.count()):
+                item = label_widget.item(i)
+                # Verifichiamo il riferimento alla shape
+                if getattr(item, 'shape', None) == shape or item.data(QtCore.Qt.UserRole) == shape:
+                    item.setSelected(True)
+                    label_widget.scrollToItem(item)
+                    break
 
     
     def project_lines_preview(self):
