@@ -1016,7 +1016,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Limite per performance GUI
         raw_coords = raw_coords[:800]
 
-        for coords in raw_coords:
+        for idx, coords in enumerate(raw_coords):
             x1, y1, x2, y2 = coords
             # Creiamo un'etichetta univoca usando l'indice
             unique_label = f"Linea_{idx:03d}"
