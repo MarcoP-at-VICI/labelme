@@ -557,6 +557,16 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Salva le linee proiettate in txt"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
+
+        actionMergeLines = action(
+            text = self.tf("Merge Lines"),
+            slot = self.merge.parallel_lines,
+            shortcut="Ctrl+Shift+M", 
+            icon="merging.svg", # Using a default icon available in LabelMe
+            tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
+            enabled=False
+        )
+        ######################################################
         
         open_next_img = action(
             text=self.tr("&Next Image"),
@@ -710,7 +720,8 @@ class MainWindow(QtWidgets.QMainWindow):
             ("ai_mask", create_ai_mask_mode),
             ("Auto-Detect Linee", actionAutoDetect),
             ("Projections Lines",actionProjectlines),
-            ("Save Projected Lines", actionProjectlines2txt)
+            ("Save Projected Lines", actionProjectlines2txt),
+            ("Merge Lines", actionMergeLines)
         ]
         zoom = (
             self._canvas_widgets.zoom_widget,
@@ -734,6 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
             actionAutoDetect,
             actionProjectlines,
             actionProjectlines2txt,
+            actionMergeLines,
         )
         on_shapes_present = (save_as, hide_all, show_all, toggle_all)
         context_menu = (
@@ -741,6 +753,7 @@ class MainWindow(QtWidgets.QMainWindow):
             actionAutoDetect,
             actionProjectlines,
             actionProjectlines2txt,
+            actionMergeLines,
             edit_mode,
             edit,
             duplicate,
@@ -1037,6 +1050,78 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
             print(f"DEBUG ERROR: {e}")
 
+    def merge_parallel_lines(self):
+        """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
+        import numpy as np
+        canvas = self._canvas_widgets.canvas
+        if not canvas.shapes: return
+
+        # Parametri di tolleranza per la tua ricerca
+        DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
+        ANGLE_EPSILON = 3.0      # Gradi di differenza massima per il parallelismo
+
+        shapes = list(canvas.shapes)
+        merged_list = []
+        used = [False] * len(shapes)
+
+        for i in range(len(shapes)):
+            if used[i]: continue
+            
+            s1 = shapes[i]
+            if len(s1.points) != 2: continue
+            
+            # Calcolo parametri retta 1
+            p1, p2 = s1.points[0], s1.points[1]
+            vec1 = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+            ang1 = np.arctan2(vec1[1], vec1[0]) % np.pi
+            center1 = np.array([(p1.x() + p2.x())/2, (p1.y() + p2.y())/2])
+
+            group = [s1]
+            used[i] = True
+
+            for j in range(i + 1, len(shapes)):
+                if used[j]: continue
+                s2 = shapes[j]
+                
+                # Calcolo parametri retta 2
+                p3, p4 = s2.points[0], s2.points[1]
+                vec2 = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+                ang2 = np.arctan2(vec2[1], vec2[0]) % np.pi
+                center2 = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+
+                # Verifica parallelismo e vicinanza
+                ang_diff = abs(ang1 - ang2)
+                ang_diff = min(ang_diff, np.pi - ang_diff)
+                dist = np.linalg.norm(center1 - center2)
+
+                if ang_diff < np.radians(ANGLE_EPSILON) and dist < DIST_EPSILON:
+                    group.append(s2)
+                    used[j] = True
+
+            # Se ho trovato linee simili, creo la "linea media"
+            if len(group) > 1:
+                avg_p1_x = sum(s.points[0].x() for s in group) / len(group)
+                avg_p1_y = sum(s.points[0].y() for s in group) / len(group)
+                avg_p2_x = sum(s.points[1].x() for s in group) / len(group)
+                avg_p2_y = sum(s.points[1].y() for s in group) / len(group)
+                
+                new_s = Shape(label="linea_merged", shape_type="line")
+                new_s.addPoint(QtCore.QPointF(avg_p1_x, avg_p1_y))
+                new_s.addPoint(QtCore.QPointF(avg_p2_x, avg_p2_y))
+                merged_list.append(new_s)
+            else:
+                merged_list.append(s1)
+
+        # Aggiorna il Canvas e la lista etichette
+        canvas.shapes = merged_list
+        self.labelList.clear()
+        for s in merged_list:
+            self.addLabel(s)
+        
+        canvas.update()
+        self.statusBar().showMessage(f"Merge completato: ridotte a {len(merged_list)} linee.")
+ 
+    
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
         shortcuts = self._config["shortcuts"]
