@@ -534,7 +534,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actionAutoDetect = action(
             text=self.tr("Auto-Detect Linee"),
             slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
-            shortcut="Ctrl+Shift+X",
+            shortcut=shortcuts["actionAutoDetect"],
             icon="magic.svg", # Using a default icon available in LabelMe
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
             enabled=False, # It starts disabled until an image is actually loaded
