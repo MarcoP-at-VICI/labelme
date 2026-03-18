@@ -928,7 +928,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f"DEBUG: {msg}")
 
     def project_lines_preview(self):
-        """Proietta ogni singolo segmento delle polilinee ai bordi dell'immagine."""
+        """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
         if not target_canvas.pixmap:
             return
@@ -936,54 +936,61 @@ class MainWindow(QtWidgets.QMainWindow):
         img_w = target_canvas.pixmap.width()
         img_h = target_canvas.pixmap.height()
         
+        # Usiamo una lista temporanea per non modificare la lista mentre la cicliamo
+        original_shapes = list(target_canvas.shapes)
         new_projected_shapes = []
-        # Cicliamo sulle shapes esistenti
-        for shape in target_canvas.shapes:
+
+        for shape in original_shapes:
             if len(shape.points) < 2:
                 continue
             
-            # Iteriamo su ogni coppia di punti della polilinea
+            # Iteriamo SOLO sulle coppie di punti adiacenti originali
             for i in range(len(shape.points) - 1):
                 p1 = shape.points[i]
                 p2 = shape.points[i+1]
+                
                 x1, y1 = p1.x(), p1.y()
                 x2, y2 = p2.x(), p2.y()
 
                 dx, dy = x2 - x1, y2 - y1
-                if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+                if abs(dx) < 1e-6 and abs(dy) < 1e-6: 
+                    continue
 
-                # Calcolo t-values per i 4 bordi
+                # Calcolo geometrico della retta passante per i due punti consecutivi
                 t_candidates = []
-                if abs(dx) > 1e-6:
+                if abs(dx) > 1e-10:
                     t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
-                if abs(dy) > 1e-6:
+                if abs(dy) > 1e-10:
                     t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
 
                 valid_pts = []
                 for t in t_candidates:
                     ix, iy = x1 + t * dx, y1 + t * dy
+                    # Verifichiamo l'intersezione effettiva con il perimetro dell'immagine
                     if -0.5 <= ix <= img_w + 0.5 and -0.5 <= iy <= img_h + 0.5:
                         valid_pts.append((ix, iy))
                 
                 if len(valid_pts) >= 2:
+                    # Troviamo i due punti di uscita dai bordi per quel segmento specifico
                     valid_pts.sort(key=lambda p: (p[0], p[1]))
                     ps, pe = valid_pts[0], valid_pts[-1]
                     
-                    # Creiamo una nuova shape di tipo "line" per ogni proiezione
+                    # Creiamo la proiezione come entità separata
                     new_shape = Shape(label=shape.label, shape_type="line")
                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
+                    
+                    # Manteniamo i metadati per la ricerca
                     new_shape.group_id = shape.group_id
-                    new_shape.description = shape.description
-                    new_shape.flags = shape.flags
                     new_shape.close()
                     new_projected_shapes.append(new_shape)
 
-        # Sostituiamo le vecchie polilinee con i segmenti proiettati
+        # SOSTITUZIONE: Rimuoviamo le polilinee "corte" e mettiamo i segmenti "lunghi"
+        # Questo evita che ri-premendo il tasto si creino proiezioni incrociate
         target_canvas.shapes = new_projected_shapes
         target_canvas.update()
         self.setDirty() 
-        self.statusBar().showMessage(f"Preview: Generati {len(new_projected_shapes)} segmenti proiettati.")
+        self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
 
     def export_projected_to_txt(self):
         """Salva le linee attualmente visibili (estese) in formato TXT."""
