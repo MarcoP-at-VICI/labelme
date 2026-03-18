@@ -985,26 +985,30 @@ class MainWindow(QtWidgets.QMainWindow):
         snap_epsilon = 5.0 
         for i in range(len(raw_coords)):
             for j in range(i + 1, len(raw_coords)):
-                # Punti del segmento i: (A, B), Punti del segmento j: (C, D)
-                # Confrontiamo tutte le combinazioni: A-C, A-D, B-C, B-D
-                pts_i = [(0,1), (2,3)] # indici x,y per l'inizio e la fine di i
-                pts_j = [(0,1), (2,3)] # indici x,y per l'inizio e la fine di j
-                
-                for idx_i in pts_i:
-                    for idx_j in pts_j:
+                # Indici degli estremi: P1=(0,1), P2=(2,3)
+                for idx_i in [(0,1), (2,3)]:
+                    for idx_j in [(0,1), (2,3)]:
                         dist = math.hypot(raw_coords[i][idx_i[0]] - raw_coords[j][idx_j[0]], 
                                           raw_coords[i][idx_i[1]] - raw_coords[j][idx_j[1]])
-                        
                         if dist < snap_epsilon:
-                            # Eseguiamo lo Snap: il punto del segmento j 
-                            # assume le coordinate esatte del segmento i
+                            # Il punto del segmento j "salta" esattamente sulle coordinate del segmento i
                             raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
                             raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
-        # --- [FINE LOGICA SNAP] ---
+                        
+        #                 if dist < snap_epsilon:
+        #                     # Eseguiamo lo Snap: il punto del segmento j 
+        #                     # assume le coordinate esatte del segmento i
+        #                     raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
+        #                     raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
+        # # --- [FINE LOGICA SNAP] ---
 
         # 5. Iniezione nel Canvas
+        # target_canvas = self._canvas_widgets.canvas
+        # target_canvas.deSelectShape()
+            # 4. Iniezione nel Canvas e sincronizzazione LabelList
         target_canvas = self._canvas_widgets.canvas
-        target_canvas.deSelectShape()
+        target_canvas.shapes = [] # Pulisce per evitare sovrapposizioni
+        self.labelList.clear()
         
         # Limite per performance GUI
         raw_coords = raw_coords[:800]
