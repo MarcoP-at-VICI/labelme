@@ -540,6 +540,24 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
+
+         actionAutoDetect = action(
+            text=self.tr("Projections Lines"),
+            slot=self.project_lines_preview, # Ensure you've defined this method in the class!
+            shortcut="Ctrl+Shift+P",
+            icon=NULL, # Using a default icon available in LabelMe
+            tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
+            enabled=False, # It starts disabled until an image is actually loaded
+        )
+
+        actionAutoDetect = action(
+            text=self.tr("Save Projected Lines"),
+            slot=self.export_projected_to_txt, # Ensure you've defined this method in the class!
+            shortcut="Ctrl+Shift+K",
+            icon=NULL, # Using a default icon available in LabelMe
+            tip=self.tr("Salva le linee proiettate"),
+            enabled=False, # It starts disabled until an image is actually loaded
+        )
         open_next_img = action(
             text=self.tr("&Next Image"),
             slot=self._open_next_image,
@@ -902,8 +920,72 @@ class MainWindow(QtWidgets.QMainWindow):
         msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
         self.statusBar().showMessage(msg)
         print(f"DEBUG: {msg}")
+
+    def project_lines_preview(self):
+        """Proietta le linee esistenti ai bordi dell'immagine per preview visiva."""
+        target_canvas = self._canvas_widgets.canvas
+        img_w = target_canvas.pixmap.width()
+        img_h = target_canvas.pixmap.height()
         
-       
+        if not target_canvas.shapes:
+            self.statusBar().showMessage("Nessuna linea da proiettare.")
+            return
+
+        for shape in target_canvas.shapes:
+            if len(shape.points) != 2:
+                continue
+            
+            x1, y1 = shape.points[0].x(), shape.points[0].y()
+            x2, y2 = shape.points[1].x(), shape.points[1].y()
+
+            dx, dy = x2 - x1, y2 - y1
+            if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+
+            # Calcolo intersezioni con i 4 bordi (t-values)
+            t_candidates = []
+            if abs(dx) > 1e-6:
+                t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
+            if abs(dy) > 1e-6:
+                t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
+
+            valid_pts = []
+            for t in t_candidates:
+                ix, iy = x1 + t * dx, y1 + t * dy
+                if -0.5 <= ix <= img_w + 0.5 and -0.5 <= iy <= img_h + 0.5:
+                    valid_pts.append((ix, iy))
+            
+            if len(valid_pts) >= 2:
+                # Ordiniamo per distanza per evitare errori di precisione
+                valid_pts.sort(key=lambda p: (p[0], p[1]))
+                p_start, p_end = valid_pts[0], valid_pts[-1]
+                
+                # Aggiorniamo i punti della shape nel canvas
+                shape.points[0].setX(p_start[0])
+                shape.points[0].setY(p_start[1])
+                shape.points[1].setX(p_end[0])
+                shape.points[1].setY(p_end[1])
+
+        target_canvas.update()
+        self.setDirty()
+        self.statusBar().showMessage("Preview Proiezione: Linee estese ai bordi.")
+
+    def export_projected_to_txt(self):
+        """Salva le linee attualmente visibili (estese) in formato TXT."""
+        save_path, _ = QFileDialog.getSaveFileName(self, "Esporta coordinate", "", "TXT (*.txt)")
+        if not save_path: return
+
+        try:
+            lines = []
+            for shape in self._canvas_widgets.canvas.shapes:
+                if len(shape.points) == 2:
+                    p1, p2 = shape.points[0], shape.points[1]
+                    lines.append(f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}")
+            
+            with open(save_path, 'w') as f:
+                f.write("\n".join(lines))
+            self.statusBar().showMessage(f"Export completato: {len(lines)} linee.")
+        except Exception as e:
+            self.statusBar().showMessage(f"Errore: {e}")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
