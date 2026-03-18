@@ -534,7 +534,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actionAutoDetect = action(
             text=self.tr("Auto-Detect Linee"),
             slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
-            shortcut=shortcuts["actionAutoDetect"],
+            shortcut="Ctrl+Shift+X",
             icon="magic.svg", # Using a default icon available in LabelMe
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
             enabled=False, # It starts disabled until an image is actually loaded
@@ -689,6 +689,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ("linestrip", create_line_strip_mode),
             ("ai_polygon", create_ai_polygon_mode),
             ("ai_mask", create_ai_mask_mode),
+            ("Auto-Detect Linee", actionAutoDetect)
         ]
         zoom = (
             self._canvas_widgets.zoom_widget,
@@ -793,6 +794,7 @@ class MainWindow(QtWidgets.QMainWindow):
             on_shapes_present=on_shapes_present,
             context_menu=context_menu,
             edit_menu=edit_menu,
+            actionAutoDetect=actionAutoDetect,
         )
     def auto_detect_lines(self):
         """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
