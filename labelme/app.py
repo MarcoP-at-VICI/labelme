@@ -560,7 +560,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         actionMergeLines = action(
             text = self.tr("Merge Lines"),
-            slot = self.merge.parallel_lines,
+            slot = self.merge_parallel_lines,
             shortcut="Ctrl+Shift+M", 
             icon="merging.svg", # Using a default icon available in LabelMe
             tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
