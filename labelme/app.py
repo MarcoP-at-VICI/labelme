@@ -794,7 +794,6 @@ class MainWindow(QtWidgets.QMainWindow):
             on_shapes_present=on_shapes_present,
             context_menu=context_menu,
             edit_menu=edit_menu,
-            actionAutoDetect=actionAutoDetect,
         )
     def auto_detect_lines(self):
         """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
