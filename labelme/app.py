@@ -541,7 +541,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False, # It starts disabled until an image is actually loaded
         )
 
-        actionAutoDetect = action(
+        actionProjectlines = action(
             text=self.tr("Projections Lines"),
             slot=self.project_lines_preview, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+P",
@@ -550,13 +550,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False, # It starts disabled until an image is actually loaded
         )
 
-        actionAutoDetect = action(
+        actionProjectlines2txt = action(
             text=self.tr("Save Projected Lines"),
             slot=self.export_projected_to_txt, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+K", 
             tip=self.tr("Salva le linee proiettate in txt"),
             enabled=False, # It starts disabled until an image is actually loaded
         )
+        
         open_next_img = action(
             text=self.tr("&Next Image"),
             slot=self._open_next_image,
@@ -707,7 +708,9 @@ class MainWindow(QtWidgets.QMainWindow):
             ("linestrip", create_line_strip_mode),
             ("ai_polygon", create_ai_polygon_mode),
             ("ai_mask", create_ai_mask_mode),
-            ("Auto-Detect Linee", actionAutoDetect)
+            ("Auto-Detect Linee", actionAutoDetect),
+            ("Projections Lines",actionProjectlines),
+            ("Save Projected Lines", actionProjectlines2txt)
         ]
         zoom = (
             self._canvas_widgets.zoom_widget,
@@ -729,11 +732,15 @@ class MainWindow(QtWidgets.QMainWindow):
             create_ai_mask_mode,
             brightness_contrast,
             actionAutoDetect,
+            actionProjectlines,
+            actionProjectlines2txt,
         )
         on_shapes_present = (save_as, hide_all, show_all, toggle_all)
         context_menu = (
             *[draw_action for _, draw_action in draw],
             actionAutoDetect,
+            actionProjectlines,
+            actionProjectlines2txt,
             edit_mode,
             edit,
             duplicate,
