@@ -989,8 +989,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """Salva le linee attualmente visibili (estese) in formato TXT."""
         #1. SALVATAGGIO NATIVO (JSON)
         # Chiamiamo la funzione nativa di LabelMe per assicurarci che lo stato sia salvato
-        if self.dirty:
-            self.saveFile() # Apre la finestra di salvataggio standard o salva se già impostato
+        try:
+            self.saveFile()
+        except Exception as e:
+            print(f"Nota: Salvataggio JSON saltato o fallito: {e}") # Apre la finestra di salvataggio standard o salva se già impostato
         # 2. ESPORTAZIONE TXT ESTESA
         # Usiamo QtWidgets.QFileDialog per evitare il NameError
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Esporta coordinate", "", "TXT (*.txt)")
@@ -999,15 +1001,18 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             lines = []
             for shape in self._canvas_widgets.canvas.shapes:
-                if len(shape.points) == 2:
-                    p1, p2 = shape.points[0], shape.points[1]
-                    lines.append(f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}")
+                if len(shape.points) >= 2:
+                    p1, p2 = shape.points[0], shape.points[-1]
+                    # Formato: x1 y1 x2 y2
+                    lines_output.append(f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}")
+
+            with open(save_path, 'w', encoding='utf-8') as f:
+                f.write("\n".join(lines_output))
+                
+            self.statusBar().showMessage(f"Dati esportati correttamente in TXT.")
             
-            with open(save_path, 'w') as f:
-                f.write("\n".join(lines))
-            self.statusBar().showMessage(f"Export completato: {len(lines)} linee.")
         except Exception as e:
-            self.statusBar().showMessage(f"Errore: {e}")
+            QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {e}")
 
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
