@@ -2341,8 +2341,11 @@ class MainWindow(QtWidgets.QMainWindow):
         fileDialog = FileDialogPreview(self)
         fileDialog.setFileMode(FileDialogPreview.ExistingFile)
         fileDialog.setNameFilter(filters)
+        # fileDialog.setWindowTitle(
+        #     self.tr("%s - Choose Image or Label file") % __appname__,
+        # )
         fileDialog.setWindowTitle(
-            self.tr("%s - Choose Image or Label file") % __appname__,
+            self.tr("%s - Choose Image or Label file - vvLabeler"),
         )
         fileDialog.setWindowFilePath(path)
         fileDialog.setViewMode(FileDialogPreview.Detail)
