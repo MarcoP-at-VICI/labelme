@@ -1184,7 +1184,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Parametri di tolleranza per la tua ricerca
         DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
-        ANGLE_EPSILON = 3.0      # Gradi di differenza massima per il parallelismo
+        ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
 
         shapes = list(canvas.shapes)
         merged_list = []
@@ -1205,56 +1205,140 @@ class MainWindow(QtWidgets.QMainWindow):
             group = [s1]
             used[i] = True
 
+            for i in range(len(shapes)):
+            if used[i] or len(shapes[i].points) < 2: continue
+            
+            group = [shapes[i]]
+            used[i] = True
+            
+            # Parametri linea i
+            p1, p2 = shapes[i].points[0], shapes[i].points[1]
+            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+
             for j in range(i + 1, len(shapes)):
-                if used[j]: continue
-                s2 = shapes[j]
+                if used[j] or len(shapes[j].points) < 2: continue
                 
-                # Calcolo parametri retta 2
-                p3, p4 = s2.points[0], s2.points[1]
-                vec2 = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-                ang2 = np.arctan2(vec2[1], vec2[0]) % np.pi
-                center2 = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+                p3, p4 = shapes[j].points[0], shapes[j].points[1]
+                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
 
-                # Verifica parallelismo e vicinanza
-                ang_diff = abs(ang1 - ang2)
-                ang_diff = min(ang_diff, np.pi - ang_diff)
-                dist = np.linalg.norm(center1 - center2)
+                # Verifica parallelismo
+                diff_angle = abs(angle_i - angle_j)
+                diff_angle = min(diff_angle, np.pi - diff_angle)
 
-                if ang_diff < np.radians(ANGLE_EPSILON) and dist < DIST_EPSILON:
-                    group.append(s2)
-                    used[j] = True
+                if diff_angle < np.radians(ANGLE_EPSILON):
+                    # Verifica distanza tra le rette (proiezione ortogonale)
+                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+                    dist = self._dist_point_to_line(mid_j, p1, p2)
+                    
+                    if dist < DIST_EPSILON:
+                        group.append(shapes[j])
+                        used[j] = True
 
-            # Se ho trovato linee simili, creo la "linea media"
+            # Creazione della LINEA MEDIA
             if len(group) > 1:
-                avg_p1_x = sum(s.points[0].x() for s in group) / len(group)
-                avg_p1_y = sum(s.points[0].y() for s in group) / len(group)
-                avg_p2_x = sum(s.points[1].x() for s in group) / len(group)
-                avg_p2_y = sum(s.points[1].y() for s in group) / len(group)
-                
-                new_s = Shape(label="linea_merged", shape_type="line")
-                new_s.addPoint(QtCore.QPointF(avg_p1_x, avg_p1_y))
-                new_s.addPoint(QtCore.QPointF(avg_p2_x, avg_p2_y))
-                merged_list.append(new_s)
+                new_shape = self._create_average_line(group)
+                merged_list.append(new_shape)
             else:
-                merged_list.append(s1)
+                merged_list.append(shapes[i])
 
-        # Aggiorna il Canvas e la lista etichette
+        # Aggiornamento UI (Safe Mode)
         canvas.shapes = merged_list
-        # In LabelMe il widget della lista etichette è solitamente self.labelList
-        # ma dobbiamo assicurarci di svuotarlo e riempirlo correttamente
-        if hasattr(self, 'labelList'):
-            self.labelList.clear()
-            for s in merged_list:
-                # addLabel è il metodo standard di MainWindow per sincronizzare UI e Canvas
-                self.addLabel(s)
-        elif hasattr(self, 'label_list'): # Backup per versioni alternative
-            self.label_list.clear()
+        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        if label_widget:
+            label_widget.clear()
             for s in merged_list:
                 self.addLabel(s)
         
         canvas.update()
-        self.setDirty() # Indica che il file è stato modificato e va salvato
-        self.statusBar().showMessage(f"Merge completato: ridotte a {len(merged_list)} linee.")
+        self.setDirty()
+        self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
+
+    def _dist_point_to_line(self, p, l1, l2):
+        """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
+        import numpy as np
+        p1 = np.array([l1.x(), l1.y()])
+        p2 = np.array([l2.x(), l2.y()])
+        return np.abs(np.cross(p2-p1, p1-p)) / np.linalg.norm(p2-p1)
+
+    def _create_average_line(self, group):
+        """Genera una retta media basata sui punti del gruppo."""
+        import numpy as np
+        from qtpy import QtCore
+        from labelme.shape import Shape
+
+        all_pts = []
+        for s in group:
+            for p in s.points:
+                all_pts.append([p.x(), p.y()])
+        all_pts = np.array(all_pts)
+
+        # Usiamo la PCA (SVD) per trovare la direzione principale della nuvola di punti
+        centroid = np.mean(all_pts, axis=0)
+        _, _, vh = np.linalg.svd(all_pts - centroid)
+        direction = vh[0] # Vettore direzione principale
+
+        # Proiettiamo i punti sulla direzione per trovare gli estremi
+        projections = (all_pts - centroid) @ direction
+        p_min = centroid + np.min(projections) * direction
+        p_max = centroid + np.max(projections) * direction
+
+        new_s = Shape(label="Linea_Merged", shape_type="polygon")
+        new_s.addPoint(QtCore.QPointF(p_min[0], p_min[1]))
+        new_s.addPoint(QtCore.QPointF(p_max[0], p_max[1]))
+        new_s.close()
+        return new_s
+        #     for j in range(i + 1, len(shapes)):
+        #         if used[j]: continue
+        #         s2 = shapes[j]
+                
+        #         # Calcolo parametri retta 2
+        #         p3, p4 = s2.points[0], s2.points[1]
+        #         vec2 = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+        #         ang2 = np.arctan2(vec2[1], vec2[0]) % np.pi
+        #         center2 = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+
+        #         # Verifica parallelismo e vicinanza
+        #         ang_diff = abs(ang1 - ang2)
+        #         ang_diff = min(ang_diff, np.pi - ang_diff)
+        #         dist = np.linalg.norm(center1 - center2)
+
+        #         if ang_diff < np.radians(ANGLE_EPSILON) and dist < DIST_EPSILON:
+        #             group.append(s2)
+        #             used[j] = True
+
+        #     # Se ho trovato linee simili, creo la "linea media"
+        #     if len(group) > 1:
+        #         avg_p1_x = sum(s.points[0].x() for s in group) / len(group)
+        #         avg_p1_y = sum(s.points[0].y() for s in group) / len(group)
+        #         avg_p2_x = sum(s.points[1].x() for s in group) / len(group)
+        #         avg_p2_y = sum(s.points[1].y() for s in group) / len(group)
+                
+        #         new_s = Shape(label="linea_merged", shape_type="line")
+        #         new_s.addPoint(QtCore.QPointF(avg_p1_x, avg_p1_y))
+        #         new_s.addPoint(QtCore.QPointF(avg_p2_x, avg_p2_y))
+        #         merged_list.append(new_s)
+        #     else:
+        #         merged_list.append(s1)
+
+        # # Aggiorna il Canvas e la lista etichette
+        # canvas.shapes = merged_list
+        # # In LabelMe il widget della lista etichette è solitamente self.labelList
+        # # ma dobbiamo assicurarci di svuotarlo e riempirlo correttamente
+        # if hasattr(self, 'labelList'):
+        #     self.labelList.clear()
+        #     for s in merged_list:
+        #         # addLabel è il metodo standard di MainWindow per sincronizzare UI e Canvas
+        #         self.addLabel(s)
+        # elif hasattr(self, 'label_list'): # Backup per versioni alternative
+        #     self.label_list.clear()
+        #     for s in merged_list:
+        #         self.addLabel(s)
+        
+        # canvas.update()
+        # self.setDirty() # Indica che il file è stato modificato e va salvato
+        # self.statusBar().showMessage(f"Merge completato: ridotte a {len(merged_list)} linee.")
  
     
     def _setup_menus(self) -> _Menus:
