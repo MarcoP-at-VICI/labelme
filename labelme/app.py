@@ -868,7 +868,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         for length, line_coords in filtered_lines:
             x1, y1, x2, y2 = line_coords
-            shape = Shape(label="Linea", shape_type="line")
+            # shape = Shape(label="Linea", shape_type="line")
+            shape = Shape(label="Linea", shape_type="linestrip") # cambiamo shape_type da "line" a "linestrip". Un linestrip può avere un numero variabile di punti (da 2 a infiniti).
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
            
