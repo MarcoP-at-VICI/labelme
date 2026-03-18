@@ -15,6 +15,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 from typing import NamedTuple
+import math
+        
 
 import imgviz
 import natsort
@@ -941,12 +943,7 @@ class MainWindow(QtWidgets.QMainWindow):
     #     print(f"DEBUG: {msg}")
     def auto_detect_lines(self):
         """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
-        import math
-        import os
-        import numpy as np
-        import cv2
-        from qtpy import QtCore
-        from labelme.shape import Shape
+        
         
         print("DEBUG: Avvio auto-detect con Snap...") 
 
@@ -984,7 +981,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # --- [INIZIO LOGICA SNAP] ---
         # Uniamo gli estremi che sono molto vicini (Epsilon pixel)
-        # Questo garantisce la contiguità geometrica per i Vanishing Points
+        
         snap_epsilon = 5.0 
         for i in range(len(raw_coords)):
             for j in range(i + 1, len(raw_coords)):
@@ -1063,6 +1060,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setSelected(True)
                 self.labelList.scrollToItem(item)
                 break
+
+    
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
