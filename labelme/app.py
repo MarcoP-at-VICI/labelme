@@ -541,7 +541,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False, # It starts disabled until an image is actually loaded
         )
 
-         actionAutoDetect = action(
+        actionAutoDetect = action(
             text=self.tr("Projections Lines"),
             slot=self.project_lines_preview, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+P",
