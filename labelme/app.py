@@ -1242,6 +1242,99 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
 
+    def merge_parallel_lines(self):
+        """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
+        import numpy as np
+        canvas = self._canvas_widgets.canvas
+        if not canvas.shapes: return
+
+        # Parametri di tolleranza per la tua ricerca
+        DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
+        ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
+
+        shapes = list(canvas.shapes)
+        merged_list = []
+        used = [False] * len(shapes)
+
+        for i in range(len(shapes)):
+            # Questa riga deve avere 1 tab (o 4 spazi) di rientro
+            if used[i] or len(shapes[i].points) < 2: 
+                continue
+            
+            group = [shapes[i]]
+            used[i] = True
+            
+            # Parametri linea i
+            p1, p2 = shapes[i].points[0], shapes[i].points[1]
+            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+
+            for j in range(i + 1, len(shapes)):
+                # Questo blocco deve avere 2 tab (o 8 spazi)
+                if used[j] or len(shapes[j].points) < 2: 
+                    continue
+                
+                p3, p4 = shapes[j].points[0], shapes[j].points[1]
+                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
+
+                # Verifica parallelismo
+                diff_angle = abs(angle_i - angle_j)
+                diff_angle = min(diff_angle, np.pi - diff_angle)
+
+                if diff_angle < np.radians(ANGLE_EPSILON):
+                    # Verifica distanza ortogonale
+                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+                    dist = self._dist_point_to_line(mid_j, p1, p2)
+                    
+                    if dist < DIST_EPSILON:
+                        group.append(shapes[j])
+                        used[j] = True
+            
+            # Parametri linea i
+            p1, p2 = shapes[i].points[0], shapes[i].points[1]
+            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+
+            for j in range(i + 1, len(shapes)):
+                if used[j] or len(shapes[j].points) < 2: continue
+                
+                p3, p4 = shapes[j].points[0], shapes[j].points[1]
+                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
+
+                # Verifica parallelismo
+                diff_angle = abs(angle_i - angle_j)
+                diff_angle = min(diff_angle, np.pi - diff_angle)
+
+                if diff_angle < np.radians(ANGLE_EPSILON):
+                    # Verifica distanza tra le rette (proiezione ortogonale)
+                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+                    dist = self._dist_point_to_line(mid_j, p1, p2)
+                    
+                    if dist < DIST_EPSILON:
+                        group.append(shapes[j])
+                        used[j] = True
+
+            # Creazione della LINEA MEDIA
+            if len(group) > 1:
+                new_shape = self._create_average_line(group)
+                merged_list.append(new_shape)
+            else:
+                merged_list.append(shapes[i])
+
+        # Aggiornamento UI (Safe Mode)
+        canvas.shapes = merged_list
+        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        if label_widget:
+            label_widget.clear()
+            for s in merged_list:
+                self.addLabel(s)
+        
+        canvas.update()
+        self.setDirty()
+        self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
+
     def _dist_point_to_line(self, p, l1, l2):
         """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
         import numpy as np
