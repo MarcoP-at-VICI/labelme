@@ -1018,6 +1018,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for idx, coords in enumerate(raw_coords):
             x1, y1, x2, y2 = coords
+            # --- CHIAMATA ALLO SNAP ---
+            # Applichiamo la "calamita" sia al punto d'inizio che a quello di fine
+            x1, y1 = self._apply_snap(x1_raw, y1_raw)
+            x2, y2 = self._apply_snap(x2_raw, y2_raw)
+            # --------------------------
+            
             # Creiamo un'etichetta univoca usando l'indice
             unique_label = f"Linea_{idx:03d}"
                 
