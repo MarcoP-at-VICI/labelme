@@ -1290,7 +1290,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(lines_output))
         
-        self.setDirty(False)
+        self.setDirty()
         self.statusBar().showMessage(f"Dataset salvato: {len(lines_output)} segmenti.")      
     # def export_segments_to_txt(self):
     #     """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
