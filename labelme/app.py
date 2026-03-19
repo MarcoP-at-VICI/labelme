@@ -1083,31 +1083,28 @@ class MainWindow(QtWidgets.QMainWindow):
             
 
     def sync_selection_to_list(self):
-        """Evidenzia l'item nella lista laterale quando si clicca una linea sul canvas."""
+        """Sincronizza il click sulla linea con la lista laterale."""
         canvas = self._canvas_widgets.canvas
-        # Cerchiamo il widget della lista annotazioni
-        label_list_widget = self._docks.label_list
-            
-        # Accediamo alla lista reale (spesso chiamata 'view' o 'list_widget')
-        inner_view = getattr(label_list_widget, 'view', label_list_widget)
+        # Cerchiamo la vera QListWidget dentro il dock
+        label_list_dock = self._docks.label_list
         
-        if not canvas.selectedShapes:
-            inner_view.clearSelection()
-            # label_list_widget.clearSelection()
+        # In LabelMe, la vera lista QListWidget è accessibile così:
+        inner_list = getattr(label_list_dock, 'labelList', None) or \
+                     getattr(label_list_dock, 'list_widget', None) or \
+                     label_list_dock # Fallback
+        
+        if not canvas.selectedShapes or not hasattr(inner_list, 'count'):
             return
 
-        shape = canvas.selectedShapes[-1] # L'ultima selezionata
+        shape = canvas.selectedShapes[-1]
+        inner_list.clearSelection()
         
-        # Cerchiamo l'item che punta a questa shape
-        for i in range(inner_view.count()):
-            item = inner_view.item(i)
-        # for i in range(label_list_widget.count()):
-        #     item = label_list_widget.item(i)
-            # Match geometrico/di riferimento
+        # Ora .count() funzionerà perché siamo sulla QListWidget corretta
+        for i in range(inner_list.count()):
+            item = inner_list.item(i)
             if getattr(item, 'shape', None) == shape:
                 item.setSelected(True)
-                inner_view.scrollToItem(item)
-                # label_list_widget.scrollToItem(item)
+                inner_list.scrollToItem(item)
                 break
 
 
