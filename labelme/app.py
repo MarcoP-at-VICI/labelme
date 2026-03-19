@@ -2776,10 +2776,12 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle(__appname__)
         
+
         self._config_file, self._config = self._load_config(
             config_file=config_file, config_overrides=config_overrides
         )
 
+        # set default shape colors
         Shape.line_color = QtGui.QColor(*self._config["shape"]["line_color"])
         Shape.fill_color = QtGui.QColor(*self._config["shape"]["fill_color"])
         Shape.select_line_color = QtGui.QColor(
@@ -2794,6 +2796,8 @@ class MainWindow(QtWidgets.QMainWindow):
         Shape.hvertex_fill_color = QtGui.QColor(
             *self._config["shape"]["hvertex_fill_color"]
         )
+
+        # Set point size from config file
         Shape.point_size = self._config["shape"]["point_size"]
 
         self._copied_shapes = []
@@ -2813,7 +2817,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
-        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list)
+        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list) #attiva la selezione delle linee automatiche
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -2835,11 +2839,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self._ai_text.setEnabled(False)
 
         self._setup_toolbars()
+
         self._status_bar = self._setup_status_bar()
+
         self._setup_app_state(output_dir=output_dir, filename=filename)
 
         self.updateFileMenu()
+
         self._canvas_widgets.zoom_widget.valueChanged.connect(self._paint_canvas)
+
         self.populateModeActions()
 
     def _setup_actions(self) -> _Actions:
@@ -3397,9 +3405,11 @@ class MainWindow(QtWidgets.QMainWindow):
         max_id = -1
         target_canvas = self._canvas_widgets.canvas
         
+        # Scansiona tutte le forme già presenti per trovare l'indice massimo
         for shape in target_canvas.shapes:
             if shape.label and shape.label.startswith(prefix):
                 try:
+                    # Estrae la parte numerica (es. da "L_005" prende "005")
                     num_str = shape.label.replace(prefix, "")
                     num = int(num_str)
                     if num > max_id:
@@ -3407,6 +3417,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 except ValueError:
                     continue
         
+        # Restituisce il prossimo ID formattato con tre cifre (es. L_011)
         return f"{prefix}{max_id + 1:03d}"
 
     def _apply_snap(self, x, y, epsilon=12.0):
@@ -3440,6 +3451,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if img_arr is None: return
         gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
         
+        # --- FIX MEMORY (BAD ALLOCATION) ---
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        h, w = gray.shape
+        scale = 1.0
+        max_dim = 1500.0
+        if max(h, w) > max_dim:
+            scale = max_dim / max(h, w)
+            gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
         lsd = cv2.createLineSegmentDetector(0)
         lines = lsd.detect(gray)[0]
         if lines is None: return
@@ -3448,6 +3468,8 @@ class MainWindow(QtWidgets.QMainWindow):
         raw_coords = []
         for line in lines:
             x1, y1, x2, y2 = line[0]
+            if scale != 1.0:
+                x1, y1, x2, y2 = x1 / scale, y1 / scale, x2 / scale, y2 / scale
             length = math.hypot(x2 - x1, y2 - y1)
             if length >= min_length:
                 raw_coords.append([x1, y1, x2, y2])
@@ -3458,18 +3480,16 @@ class MainWindow(QtWidgets.QMainWindow):
         for coords in raw_coords:
             x1_raw, y1_raw, x2_raw, y2_raw = coords
             
-            # Snap in fase di inserimento (trova punti comuni con i segmenti appena inseriti)
+            # Snap in fase di inserimento
             x1, y1 = self._apply_snap(x1_raw, y1_raw)
             x2, y2 = self._apply_snap(x2_raw, y2_raw)
             
-            # Evita linee degeneri a lunghezza zero dopo lo snap
             if math.hypot(x2 - x1, y2 - y1) < 1.0:
                 continue
             
             unique_label = self.get_next_label(prefix="L_")
             
-            # FIX SELEZIONE CANVAS: se è "polygon", un segmento a 2 punti ha area 0 e non rileva il click del mouse. 
-            # Deve essere "line" per consentire a Qt di usare la distanza lineare per il click.
+            # IMPERATIVO: shape_type="line" per poterle selezionare col mouse.
             shape = Shape(label=unique_label, shape_type="line") 
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
@@ -3498,7 +3518,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
         
-        # Abilita modalità Selezione così puoi subito cliccare sul canvas
         self._switch_canvas_mode(edit=True)
             
     def sync_selection_to_list(self):
@@ -3513,7 +3532,6 @@ class MainWindow(QtWidgets.QMainWindow):
             shape = canvas.selectedShapes[-1]
             label_list_widget.clearSelection()
         
-            # Iterazione robusta compatibile con la lista di LabelMe
             for item in label_list_widget:
                 if getattr(item, 'shape', lambda: None)() == shape:
                     item.setSelected(True)
@@ -3565,7 +3583,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     valid_pts.sort(key=lambda p: (p[0], p[1]))
                     ps, pe = valid_pts[0], valid_pts[-1]
                     
-                    # Usa "line" in modo coerente
                     new_shape = Shape(label=shape.label, shape_type="line")
                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
@@ -3712,17 +3729,16 @@ class MainWindow(QtWidgets.QMainWindow):
         p_min = centroid + np.min(projections) * direction
         p_max = centroid + np.max(projections) * direction
 
-        # Snap post-merge con il canvas
         x1, y1 = self._apply_snap(p_min[0], p_min[1])
         x2, y2 = self._apply_snap(p_max[0], p_max[1])
 
-        # Usa "line" per permettere sempre la selezione
         new_s = Shape(label="Linea_Merged", shape_type="line")
         new_s.addPoint(QtCore.QPointF(x1, y1))
         new_s.addPoint(QtCore.QPointF(x2, y2))
         new_s.close()
         return new_s
  
+    
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
         shortcuts = self._config["shortcuts"]
@@ -4354,6 +4370,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _edit_label(self, value=None):
         items = self._docks.label_list.selectedItems()
         if not items:
+            logger.warning("No label is selected, so cannot edit label.")
             return
 
         shape = items[0].shape()
