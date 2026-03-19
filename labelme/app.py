@@ -1087,20 +1087,27 @@ class MainWindow(QtWidgets.QMainWindow):
         canvas = self._canvas_widgets.canvas
         # Cerchiamo il widget della lista annotazioni
         label_list_widget = self._docks.label_list
+            
+        # Accediamo alla lista reale (spesso chiamata 'view' o 'list_widget')
+        inner_view = getattr(label_list_widget, 'view', label_list_widget
         
         if not canvas.selectedShapes:
-            label_list_widget.clearSelection()
+            inner_view.clearSelection()
+            # label_list_widget.clearSelection()
             return
 
         shape = canvas.selectedShapes[-1] # L'ultima selezionata
         
         # Cerchiamo l'item che punta a questa shape
-        for i in range(label_list_widget.count()):
-            item = label_list_widget.item(i)
+        for i in range(inner_view.count()):
+            item = inner_view.item(i)
+        # for i in range(label_list_widget.count()):
+        #     item = label_list_widget.item(i)
             # Match geometrico/di riferimento
             if getattr(item, 'shape', None) == shape:
                 item.setSelected(True)
-                label_list_widget.scrollToItem(item)
+                inner_view.scrollToItem(item)
+                # label_list_widget.scrollToItem(item)
                 break
 
 
