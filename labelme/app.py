@@ -3547,7 +3547,6 @@
 #     logger.debug("found {:d} images in {!r}", len(images), root_dir)
 #     return natsort.os_sorted(images)
 
-
 from __future__ import annotations
 
 import enum
@@ -3565,6 +3564,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 from typing import NamedTuple
+import math
+        
 
 import imgviz
 import natsort
@@ -3578,6 +3579,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
 import cv2
+import numpy as np
 from qtpy import QtCore
 
 from labelme import __appname__
@@ -4083,35 +4085,35 @@ class MainWindow(QtWidgets.QMainWindow):
         # --- YOUR CUSTOM ACTION ---
         actionAutoDetect = action(
             text=self.tr("Auto-Detect Linee"),
-            slot=self.auto_detect_lines, 
+            slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+X",
-            icon="magic.svg", 
+            icon="magic.svg", # Using a default icon available in LabelMe
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
-            enabled=False, 
+            enabled=False, # It starts disabled until an image is actually loaded
         )
 
         actionProjectlines = action(
             text=self.tr("Projections Lines"),
-            slot=self.project_lines_preview, 
+            slot=self.project_lines_preview, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+P",
-            icon="Projection_and_rejection.svg", 
+            icon="Projection_and_rejection.svg", # Using a default icon available in LabelMe
             tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
-            enabled=False, 
+            enabled=False, # It starts disabled until an image is actually loaded
         )
 
         actionProjectlines2txt = action(
             text=self.tr("Save Projected Lines"),
-            slot=self.export_segments_to_txt, 
+            slot=self.export_segments_to_txt, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+K", 
             tip=self.tr("Salva le linee proiettate in txt"),
-            enabled=False, 
+            enabled=False, # It starts disabled until an image is actually loaded
         )
 
         actionMergeLines = action(
             text = self.tr("Merge Lines"),
             slot = self.merge_parallel_lines,
             shortcut="Ctrl+Shift+M", 
-            icon="merging.svg", 
+            icon="merging.svg", # Using a default icon available in LabelMe
             tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
             enabled=False
         )
@@ -4409,6 +4411,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def auto_detect_lines(self):
         """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
         
+        
         print("DEBUG: Avvio auto-detect con Snap...") 
 
         # 1. Ricerca del file path (Invariato)
@@ -4510,28 +4513,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self._switch_canvas_mode(edit=True)
             
     def sync_selection_to_list(self):
-        """Sincronizza click su linea e lista laterale senza crash."""
+        """Sincronizza click su linea e lista laterale usando i metodi nativi."""
         try:
             canvas = self._canvas_widgets.canvas
-            # Accesso diretto alla lista etichette
             label_list_widget = self._docks.label_list
             
             if not canvas.selectedShapes or label_list_widget is None:
                 return
 
             shape = canvas.selectedShapes[-1]
-            # Accediamo alla view interna della lista etichette
             label_list_widget.clearSelection()
         
-            # FIX: Iterazione diretta, LabelListWidget non supporta .count() in questa versione
-            for item in label_list_widget:
-                # LabelMe memorizza la shape nel metodo shape() dell'item
-                if item.shape() == shape:
-                    item.setSelected(True)
-                    label_list_widget.scrollToItem(item)
-                    break
+            # LabelMe usa un metodo custom per selezionare gli item, non il setSelected di PyQt
+            item = label_list_widget.findItemByShape(shape)
+            if item:
+                label_list_widget.selectItem(item)
+                label_list_widget.scrollToItem(item)
         except Exception as e:
-            # Chiudendo il blocco try con except, il SyntaxError sparisce
             print(f"Errore sincronizzazione: {e}")
 
     def _apply_snap(self, x, y, epsilon=10.0):
@@ -6351,9 +6349,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if item:
             item.setCheckState(Qt.Unchecked)
 
-        # FIX: Resettiamo SEMPRE l'interfaccia e la lista grafica per svuotare il Canvas
+        # Svuota tutto l'interfaccia a prescindere dall'esistenza del file su disco
         self.resetState()
         self.setClean()
+        self._canvas_widgets.canvas.shapes = []
+        if hasattr(self._docks, 'label_list'):
+            self._docks.label_list.clear()
         self._canvas_widgets.canvas.update()
 
     def _open_config_file(self) -> None:
@@ -6579,3 +6580,4 @@ def _scan_image_files(root_dir: str) -> list[str]:
 
     logger.debug("found {:d} images in {!r}", len(images), root_dir)
     return natsort.os_sorted(images)
+
