@@ -1257,53 +1257,44 @@ class MainWindow(QtWidgets.QMainWindow):
     #         QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
     #         print(f"DEBUG ERROR: {e}")
     def export_segments_to_txt(self):
-        """Salva il JSON automaticamente e poi genera il TXT (x1, x2, y1, y2, H, W)."""
+        """Salva JSON e TXT (x1, x2, y1, y2, H, W) in un colpo solo."""
         import os
-        
-        # 1. Recupero percorsi
-        if not self.imagePath or not os.path.exists(self.imagePath):
-            self.statusBar().showMessage("Errore: Nessuna immagine caricata.")
+        # Recupero dinamico del percorso file
+        img_path = getattr(self, 'imagePath', None) or getattr(self, '_image_path', None)
+        if not img_path:
+            # Ultima spiaggia: recupero dal caricatore di file
+            img_path = self.filename if hasattr(self, 'filename') else None
+
+        if not img_path or not os.path.exists(img_path):
+            self.statusBar().showMessage("Errore: Percorso immagine non trovato.")
             return
 
-        # Definiamo il percorso del JSON (stesso nome dell'immagine)
-        json_path = os.path.splitext(self.imagePath)[0] + ".json"
-        
-        # 2. SALVATAGGIO JSON FORZATO (Metodo interno di LabelMe)
-        # Questo salva lo stato attuale delle shapes nel file JSON
+        # 1. SALVATAGGIO JSON (Metodo robusto)
+        json_path = os.path.splitext(img_path)[0] + ".json"
         try:
+            # Usiamo il metodo di salvataggio diretto delle labels
             self.saveLabels(json_path)
-            print(f"DEBUG: JSON salvato correttamente in {json_path}")
         except Exception as e:
-            self.errorMessage("Errore Salvataggio JSON", str(e))
-            return
+            print(f"Errore salvataggio JSON: {e}")
 
-        # 3. GENERAZIONE TXT (Formato Reale richiesto)
+        # 2. GENERAZIONE TXT
         canvas = self._canvas_widgets.canvas
-        img_w = canvas.pixmap.width()
-        img_h = canvas.pixmap.height()
+        img_w, img_h = canvas.pixmap.width(), canvas.pixmap.height()
         
         lines_output = []
         for shape in canvas.shapes:
-            num_points = len(shape.points)
-            if num_points < 2: continue
-
-            # Esportiamo ogni segmento della polilinea/linea
-            for i in range(num_points - 1):
+            # Scomponiamo ogni polilinea in segmenti reali
+            for i in range(len(shape.points) - 1):
                 p1, p2 = shape.points[i], shape.points[i+1]
-                # Formato: x1, x2, y1, y2, H, W
-                line_str = f"{p1.x():.2f}, {p2.x():.2f}, {p1.y():.2f}, {p2.y():.2f}, {img_h}, {img_w}"
-                lines_output.append(line_str)
+                # Formato richiesto: x1, x2, y1, y2, H, W
+                lines_output.append(f"{p1.x():.2f}, {p2.x():.2f}, {p1.y():.2f}, {p2.y():.2f}, {img_h}, {img_w}")
 
-        # Salviamo il TXT con lo stesso nome
-        txt_path = os.path.splitext(self.imagePath)[0] + ".txt"
-        try:
-            with open(txt_path, 'w', encoding='utf-8') as f:
-                f.write("\n".join(lines_output))
-            
-            self.setDirty(False) # Reset dello stato "modificato"
-            self.statusBar().showMessage(f"Dataset aggiornato: JSON + TXT ({len(lines_output)} seg.)")
-        except Exception as e:
-            self.errorMessage("Errore Scrittura TXT", str(e))        
+        txt_path = os.path.splitext(img_path)[0] + ".txt"
+        with open(txt_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(lines_output))
+        
+        self.setDirty(False)
+        self.statusBar().showMessage(f"Dataset salvato: {len(lines_output)} segmenti.")      
     # def export_segments_to_txt(self):
     #     """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
     #     target_canvas = self._canvas_widgets.canvas
