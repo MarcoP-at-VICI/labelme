@@ -1094,19 +1094,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
             shape = canvas.selectedShapes[-1]
-            label_list.clearSelection()
-            
-            # Cerchiamo l'item corrispondente
-            for i in range(label_list.count()):
-                item = label_list.item(i)
-                # Verifichiamo il riferimento originale della shape
-                if getattr(item, '_shape', None) == shape or getattr(item, 'shape', None) == shape:
+            # Accediamo alla view interna della lista etichette
+            label_list_widget = self._docks.label_list
+            label_list_widget.clearSelection()
+        
+            for i in range(label_list_widget.count()):
+                item = label_list_widget.item(i)
+                # LabelMe memorizza la shape nei dati dell'item (Qt.UserRole)
+                if item.data(QtCore.Qt.UserRole) == target_shape:
                     item.setSelected(True)
-                    label_list.scrollToItem(item)
+                    label_list_widget.scrollToItem(item)
                     break
-            canvas.update()
-        except Exception as e:
-            print(f"Errore sincronizzazione: {e}")
     # def sync_selection_to_list(self):
     #     """Sincronizza il click sulla linea con la lista laterale."""
     #     canvas = self._canvas_widgets.canvas
