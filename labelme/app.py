@@ -3565,8 +3565,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 from typing import NamedTuple
-import math
-        
 
 import imgviz
 import natsort
@@ -3580,7 +3578,6 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
 import cv2
-import numpy as np
 from qtpy import QtCore
 
 from labelme import __appname__
@@ -4086,35 +4083,35 @@ class MainWindow(QtWidgets.QMainWindow):
         # --- YOUR CUSTOM ACTION ---
         actionAutoDetect = action(
             text=self.tr("Auto-Detect Linee"),
-            slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
+            slot=self.auto_detect_lines, 
             shortcut="Ctrl+Shift+X",
-            icon="magic.svg", # Using a default icon available in LabelMe
+            icon="magic.svg", 
             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
-            enabled=False, # It starts disabled until an image is actually loaded
+            enabled=False, 
         )
 
         actionProjectlines = action(
             text=self.tr("Projections Lines"),
-            slot=self.project_lines_preview, # Ensure you've defined this method in the class!
+            slot=self.project_lines_preview, 
             shortcut="Ctrl+Shift+P",
-            icon="Projection_and_rejection.svg", # Using a default icon available in LabelMe
+            icon="Projection_and_rejection.svg", 
             tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
-            enabled=False, # It starts disabled until an image is actually loaded
+            enabled=False, 
         )
 
         actionProjectlines2txt = action(
             text=self.tr("Save Projected Lines"),
-            slot=self.export_segments_to_txt, # Ensure you've defined this method in the class!
+            slot=self.export_segments_to_txt, 
             shortcut="Ctrl+Shift+K", 
             tip=self.tr("Salva le linee proiettate in txt"),
-            enabled=False, # It starts disabled until an image is actually loaded
+            enabled=False, 
         )
 
         actionMergeLines = action(
             text = self.tr("Merge Lines"),
             slot = self.merge_parallel_lines,
             shortcut="Ctrl+Shift+M", 
-            icon="merging.svg", # Using a default icon available in LabelMe
+            icon="merging.svg", 
             tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
             enabled=False
         )
@@ -4384,7 +4381,7 @@ class MainWindow(QtWidgets.QMainWindow):
             context_menu=context_menu,
             edit_menu=edit_menu,
         )
-
+    
         
     def get_next_label(self, prefix="L_"):
         """Trova il numero più alto tra le etichette esistenti e suggerisce il successivo."""
@@ -4411,7 +4408,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
     def auto_detect_lines(self):
         """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
-        
         
         print("DEBUG: Avvio auto-detect con Snap...") 
 
@@ -4463,24 +4459,8 @@ class MainWindow(QtWidgets.QMainWindow):
                             raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
                             raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
                         
-        #                 if dist < snap_epsilon:
-        #                     # Eseguiamo lo Snap: il punto del segmento j 
-        #                     # assume le coordinate esatte del segmento i
-        #                     raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
-        #                     raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
-        # # --- [FINE LOGICA SNAP] ---
-
-        # 5. Iniezione nel Canvas
-        # target_canvas = self._canvas_widgets.canvas
-        # target_canvas.deSelectShape()
-            # 4. Iniezione nel Canvas e sincronizzazione LabelList
+        
         target_canvas = self._canvas_widgets.canvas
-        # target_canvas.shapes = [] # Pulisce per evitare sovrapposizioni
-            
-        # --- FIX ATTRIBUTE ERROR: Svuota la lista usando il nome corretto ---
-        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        # if label_widget:
-        #     label_widget.clear()
         
         # Limite per performance GUI
         raw_coords = raw_coords[:800]
@@ -4526,6 +4506,8 @@ class MainWindow(QtWidgets.QMainWindow):
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
+        # FIX SELEZIONE: Riporta la modalità in Edit così puoi cliccare sulle linee create
+        self._switch_canvas_mode(edit=True)
             
     def sync_selection_to_list(self):
         """Sincronizza click su linea e lista laterale senza crash."""
@@ -4541,17 +4523,16 @@ class MainWindow(QtWidgets.QMainWindow):
             # Accediamo alla view interna della lista etichette
             label_list_widget.clearSelection()
         
-            for i in range(label_list_widget.count()):
-                item = label_list_widget.item(i)
-                # LabelMe memorizza la shape nei dati dell'item (Qt.UserRole)
-                if item.data(QtCore.Qt.UserRole) == shape:
+            # FIX: Iterazione diretta, LabelListWidget non supporta .count() in questa versione
+            for item in label_list_widget:
+                # LabelMe memorizza la shape nel metodo shape() dell'item
+                if item.shape() == shape:
                     item.setSelected(True)
                     label_list_widget.scrollToItem(item)
                     break
         except Exception as e:
             # Chiudendo il blocco try con except, il SyntaxError sparisce
             print(f"Errore sincronizzazione: {e}")
-    
 
     def _apply_snap(self, x, y, epsilon=10.0):
         """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
@@ -4633,8 +4614,9 @@ class MainWindow(QtWidgets.QMainWindow):
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
+        # FIX SELEZIONE: Riporta la modalità in Edit così puoi cliccare sulle linee create
+        self._switch_canvas_mode(edit=True)
 
- 
     def export_segments_to_txt(self):
         """Salva JSON e TXT (x1, x2, y1, y2, H, W) in un colpo solo."""
         import os
@@ -4674,9 +4656,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.setDirty()
         self.statusBar().showMessage(f"Dataset salvato: {len(lines_output)} segmenti.")      
-  
-
-
+    
     def merge_parallel_lines(self):
         """Fonde segmenti paralleli e vicini (ottimizzato per la tua MainWindow)."""
         import numpy as np
@@ -4747,8 +4727,8 @@ class MainWindow(QtWidgets.QMainWindow):
             canvas.shapes.append(s)
 
         # 3. Ripristino Interfaccia
-        if hasattr(self._actions, 'edit'):
-            self._actions.edit.trigger()
+        # FIX SELEZIONE: Riporta la modalità in Edit così puoi cliccare sulle linee create
+        self._switch_canvas_mode(edit=True)
         canvas.setEditing(True)
         canvas.update()
         
@@ -4792,7 +4772,6 @@ class MainWindow(QtWidgets.QMainWindow):
         new_s.addPoint(QtCore.QPointF(x2, y2))
         new_s.close()
         return new_s
-        
  
     
     def _setup_menus(self) -> _Menus:
@@ -6368,11 +6347,14 @@ class MainWindow(QtWidgets.QMainWindow):
             os.remove(label_file)
             logger.info(f"Label file is removed: {label_file}")
 
-            item = self._docks.file_list.currentItem()
-            if item:
-                item.setCheckState(Qt.Unchecked)
+        item = self._docks.file_list.currentItem()
+        if item:
+            item.setCheckState(Qt.Unchecked)
 
-            self.resetState()
+        # FIX: Resettiamo SEMPRE l'interfaccia e la lista grafica per svuotare il Canvas
+        self.resetState()
+        self.setClean()
+        self._canvas_widgets.canvas.update()
 
     def _open_config_file(self) -> None:
         if self._config_file is None:
