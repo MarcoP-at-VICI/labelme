@@ -1081,30 +1081,54 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
             
-    def sync_selection_to_list(self):
-        """Sincronizza il Canvas con la lista laterale (Annotation List)."""
-        target_canvas = self._canvas_widgets.canvas
-        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+
+   def sync_selection_to_list(self):
+        """Evidenzia l'item nella lista laterale quando si clicca una linea sul canvas."""
+        canvas = self._canvas_widgets.canvas
+        # Cerchiamo il widget della lista annotazioni
+        label_list_widget = self._docks.label_list
         
-        if not label_widget:
+        if not canvas.selectedShapes:
+            label_list_widget.clearSelection()
             return
 
-        # Recuperiamo le forme selezionate sul canvas
-        selected_shapes = target_canvas.selectedShapes
+        shape = canvas.selectedShapes[-1] # L'ultima selezionata
         
-        # Puliamo la selezione precedente nella lista
-        label_widget.clearSelection()
+        # Cerchiamo l'item che punta a questa shape
+        for i in range(label_list_widget.count()):
+            item = label_list_widget.item(i)
+            # Match geometrico/di riferimento
+            if getattr(item, 'shape', None) == shape:
+                item.setSelected(True)
+                label_list_widget.scrollToItem(item)
+                break
+
+
         
-        if selected_shapes:
-            # Prendiamo l'ultima forma cliccata
-            shape = selected_shapes[-1]
-            for i in range(label_widget.count()):
-                item = label_widget.item(i)
-                # Verifichiamo il riferimento alla shape
-                if getattr(item, 'shape', None) == shape or item.data(QtCore.Qt.UserRole) == shape:
-                    item.setSelected(True)
-                    label_widget.scrollToItem(item)
-                    break
+    # def sync_selection_to_list(self):
+    #     """Sincronizza il Canvas con la lista laterale (Annotation List)."""
+    #     target_canvas = self._canvas_widgets.canvas
+    #     label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        
+    #     if not label_widget:
+    #         return
+
+    #     # Recuperiamo le forme selezionate sul canvas
+    #     selected_shapes = target_canvas.selectedShapes[-1]
+        
+    #     # Puliamo la selezione precedente nella lista
+    #     label_widget.clearSelection()
+        
+    #     if selected_shapes:
+    #         # Prendiamo l'ultima forma cliccata
+    #         shape = selected_shapes[-1]
+    #         for i in range(label_widget.count()):
+    #             item = label_widget.item(i)
+    #             # Verifichiamo il riferimento alla shape
+    #             if getattr(item, 'shape', None) == shape or item.data(QtCore.Qt.UserRole) == shape:
+    #                 item.setSelected(True)
+    #                 label_widget.scrollToItem(item)
+    #                 break
 
     def _apply_snap(self, x, y, epsilon=8.0):
         """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
