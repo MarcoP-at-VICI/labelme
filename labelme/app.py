@@ -2462,47 +2462,102 @@ class MainWindow(QtWidgets.QMainWindow):
             [item.shape() for item in self._docks.label_list]
         )
 
-    # Callback functions:
-
+        
     def newShape(self) -> None:
-        """Pop-up and give focus to the label editor.
-
-        position MUST be in global coordinates.
-        """
+        """Pop-up con suggerimento automatico dell'etichetta e focus sull'editor."""
         items = self._docks.unique_label_list.selectedItems()
         text = None
+        
+        # 1. Recupero suggerimento automatico
+        # Se non c'è un'etichetta selezionata nella lista 'unique', usiamo il contatore
         if items:
             text = items[0].data(Qt.UserRole)
+        else:
+            text = self.get_next_label(prefix="L_") # Chiama la funzione di conteggio
+
         flags = {}
         group_id = None
         description = ""
+        
         if self._config["display_label_popup"] or not text:
-            previous_text = self._label_dialog.edit.text()
-            text, flags, group_id, description = self._label_dialog.popUp(text)
-            if not text:
-                self._label_dialog.edit.setText(previous_text)
+            # Impostiamo il testo suggerito nel campo di edit prima del popUp
+            self._label_dialog.edit.setText(text)
+            
+            # Mostra il dialogo
+            res = self._label_dialog.popUp(text)
+            if res is not None:
+                text, flags, group_id, description = res
+            else:
+                text = None # Utente ha premuto Cancel
 
         if text and not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
-                self.tr("Invalid label '{}' with validation type '{}'").format(
-                    text, self._config["validate_label"]
-                ),
+                self.tr("Invalid label '{}'").format(text)
             )
             text = ""
+
         if text:
             self._docks.label_list.clearSelection()
+            # Imposta l'etichetta sul canvas
             shape = self._canvas_widgets.canvas.setLastLabel(text, flags)
             shape.group_id = group_id
             shape.description = description
+            
+            # 2. Registrazione ufficiale (Fondamentale per il salvataggio JSON)
             self.addLabel(shape)
+            
             self._actions.edit_mode.setEnabled(True)
             self._actions.undo_last_point.setEnabled(False)
             self._actions.undo.setEnabled(True)
+            
+            # 3. Stato Dirty (Abilita il tasto Save)
             self.setDirty()
         else:
             self._canvas_widgets.canvas.undoLastLine()
-            self._canvas_widgets.canvas.shapesBackups.pop()
+            if self._canvas_widgets.canvas.shapesBackups:
+                self._canvas_widgets.canvas.shapesBackups.pop()
+    # Callback functions:
+
+    # def newShape(self) -> None:
+    #     """Pop-up and give focus to the label editor.
+
+    #     position MUST be in global coordinates.
+    #     """
+    #     items = self._docks.unique_label_list.selectedItems()
+    #     text = None
+    #     if items:
+    #         text = items[0].data(Qt.UserRole)
+    #     flags = {}
+    #     group_id = None
+    #     description = ""
+    #     if self._config["display_label_popup"] or not text:
+    #         previous_text = self._label_dialog.edit.text()
+    #         text, flags, group_id, description = self._label_dialog.popUp(text)
+    #         if not text:
+    #             self._label_dialog.edit.setText(previous_text)
+
+    #     if text and not self.validateLabel(text):
+    #         self.errorMessage(
+    #             self.tr("Invalid label"),
+    #             self.tr("Invalid label '{}' with validation type '{}'").format(
+    #                 text, self._config["validate_label"]
+    #             ),
+    #         )
+    #         text = ""
+    #     if text:
+    #         self._docks.label_list.clearSelection()
+    #         shape = self._canvas_widgets.canvas.setLastLabel(text, flags)
+    #         shape.group_id = group_id
+    #         shape.description = description
+    #         self.addLabel(shape)
+    #         self._actions.edit_mode.setEnabled(True)
+    #         self._actions.undo_last_point.setEnabled(False)
+    #         self._actions.undo.setEnabled(True)
+    #         self.setDirty()
+    #     else:
+    #         self._canvas_widgets.canvas.undoLastLine()
+    #         self._canvas_widgets.canvas.shapesBackups.pop()
 
     def scrollRequest(self, delta: int, orientation: Qt.Orientation) -> None:
         units = -delta * 0.1  # natural scroll
