@@ -1105,6 +1105,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     item.setSelected(True)
                     label_list_widget.scrollToItem(item)
                     break
+        except Exception as e:
+            # Chiudendo il blocco try con except, il SyntaxError sparisce
+            print(f"Errore sincronizzazione: {e}")
     # def sync_selection_to_list(self):
     #     """Sincronizza il click sulla linea con la lista laterale."""
     #     canvas = self._canvas_widgets.canvas
