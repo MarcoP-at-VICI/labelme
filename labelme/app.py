@@ -1157,7 +1157,7 @@ class MainWindow(QtWidgets.QMainWindow):
     #                 label_widget.scrollToItem(item)
     #                 break
 
-    def _apply_snap(self, x, y, epsilon=8.0):
+    def _apply_snap(self, x, y, epsilon=10.0):
         """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
         target_canvas = self._canvas_widgets.canvas
         for shape in target_canvas.shapes:
