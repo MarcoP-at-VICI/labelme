@@ -1510,9 +1510,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _create_average_line(self, group):
         """Genera una retta media basata sui punti del gruppo."""
-        import numpy as np
-        from qtpy import QtCore
-        from labelme.shape import Shape
 
         all_pts = []
         for s in group:
@@ -1530,9 +1527,15 @@ class MainWindow(QtWidgets.QMainWindow):
         p_min = centroid + np.min(projections) * direction
         p_max = centroid + np.max(projections) * direction
 
+        # --- APPLICAZIONE SNAP SUI NUOVI ESTREMI ---
+        # Questo assicura che se la retta media finisce vicino a un vertice 
+        # di una linea NON mergiata, vi si agganci.
+        x1, y1 = self._apply_snap(p_min[0], p_min[1])
+        x2, y2 = self._apply_snap(p_max[0], p_max[1])
+
         new_s = Shape(label="Linea_Merged", shape_type="polygon")
-        new_s.addPoint(QtCore.QPointF(p_min[0], p_min[1]))
-        new_s.addPoint(QtCore.QPointF(p_max[0], p_max[1]))
+        new_s.addPoint(QtCore.QPointF(x1, y1))
+        new_s.addPoint(QtCore.QPointF(x2, y2))
         new_s.close()
         return new_s
         #     for j in range(i + 1, len(shapes)):
