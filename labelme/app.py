@@ -1030,11 +1030,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # target_canvas.deSelectShape()
             # 4. Iniezione nel Canvas e sincronizzazione LabelList
         target_canvas = self._canvas_widgets.canvas
-        target_canvas.shapes = [] # Pulisce per evitare sovrapposizioni
+        # target_canvas.shapes = [] # Pulisce per evitare sovrapposizioni
+            
         # --- FIX ATTRIBUTE ERROR: Svuota la lista usando il nome corretto ---
-        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        if label_widget:
-            label_widget.clear()
+        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        # if label_widget:
+        #     label_widget.clear()
         
         # Limite per performance GUI
         raw_coords = raw_coords[:800]
