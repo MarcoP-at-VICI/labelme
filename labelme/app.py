@@ -1040,7 +1040,7 @@ class MainWindow(QtWidgets.QMainWindow):
         raw_coords = raw_coords[:800]
 
         for idx, coords in enumerate(raw_coords):
-            x1, y1, x2, y2 = coords
+            x1_raw, y1_raw, x2_raw, y2_raw = coords
             # --- CHIAMATA ALLO SNAP ---
             # Applichiamo la "calamita" sia al punto d'inizio che a quello di fine
             x1, y1 = self._apply_snap(x1_raw, y1_raw)
@@ -1139,6 +1139,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if dist < epsilon:
                     return p.x(), p.y()
         return x, y
+            
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
