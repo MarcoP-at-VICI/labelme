@@ -3584,7 +3584,7 @@ from labelme.widgets import (
 )
 from . import utils
 
-# High-DPI scaling
+# Fix High-DPI
 if hasattr(QtCore.Qt, "AA_EnableHighDpiScaling"):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
@@ -3639,13 +3639,6 @@ class _Actions(NamedTuple):
     remove_point: QtWidgets.QAction
     create_mode: QtWidgets.QAction
     edit_mode: QtWidgets.QAction
-    create_rectangle_mode: QtWidgets.QAction | None
-    create_circle_mode: QtWidgets.QAction | None
-    create_line_mode: QtWidgets.QAction | None
-    create_point_mode: QtWidgets.QAction | None
-    create_line_strip_mode: QtWidgets.QAction | None
-    create_ai_polygon_mode: QtWidgets.QAction | None
-    create_ai_mask_mode: QtWidgets.QAction | None
     auto_detect: QtWidgets.QAction
     merge_lines: QtWidgets.QAction
     project_lines: QtWidgets.QAction
@@ -3665,21 +3658,8 @@ class _Actions(NamedTuple):
     show_all: QtWidgets.QAction
     toggle_all: QtWidgets.QAction
     open_dir: QtWidgets.QAction
-    zoom_widget_action: QtWidgets.QWidgetAction | None
     draw: list[tuple[str, QtWidgets.QAction]]
-    zoom: tuple[QtWidgets.QAction, ...]
     on_load_active: tuple[QtWidgets.QAction, ...]
-    on_shapes_present: tuple[QtWidgets.QAction, ...]
-    context_menu: tuple[QtWidgets.QAction, ...]
-    edit_menu: tuple[QtWidgets.QAction | None, ...]
-
-class _Menus(NamedTuple):
-    file: QtWidgets.QMenu
-    edit: QtWidgets.QMenu
-    view: QtWidgets.QMenu
-    help: QtWidgets.QMenu
-    recent_files: QtWidgets.QMenu
-    label_list: QtWidgets.QMenu
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, config_file=None, config_overrides=None, filename=None, output_dir=None):
@@ -3688,24 +3668,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config_file, self._config = self._load_config(config_file, config_overrides)
         self._is_changed = False
         self._copied_shapes = []
-        
-        # UI Setup
+        self._recent_files = []
+        self._image_path = None
+        self._filename = None
+        self._output_dir = output_dir
+
+        # 1. UI Base
         self._label_dialog = LabelDialog(parent=self, labels=self._config.get("labels", []))
         self._docks = self._setup_dock_widgets()
         self.setAcceptDrops(True)
-        
-        # Fix RuntimeError: il canvas deve essere creato prima delle azioni e gestito con setCentralWidget
+
+        # 2. Canvas (Creato prima delle azioni per evitare RuntimeError)
         self._canvas_widgets = self._setup_canvas()
-        
-        # Connessioni
         self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list)
-        
+
+        # 3. Actions & Menus
         self._actions = self._setup_actions()
         self._status_bar = self._setup_status_bar()
+        
+        # 4. State load
         self._setup_app_state(output_dir, filename)
         self._setup_toolbars()
-        
-    # --- GEOMETRY ENGINE (Deep Vanishing Point) ---
+
+    # --- RICERCA GEOMETRICA (SNAP, LSD, MERGE) ---
 
     def _apply_snap(self, x, y, epsilon=10.0):
         for shape in self._canvas_widgets.canvas.shapes:
@@ -3725,7 +3710,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return f"{prefix}{max_id + 1:03d}"
 
     def auto_detect_lines(self):
-        img_p = getattr(self, '_image_path', None) or self._filename
+        img_p = self._image_path or self._filename
         if not img_p or not os.path.exists(img_p): return
         img_arr = cv2.imdecode(np.fromfile(img_p, dtype=np.uint8), cv2.IMREAD_COLOR)
         if img_arr is None: return
@@ -3779,15 +3764,6 @@ class MainWindow(QtWidgets.QMainWindow):
         s = Shape(label="Linea_Merged", shape_type="polygon")
         s.addPoint(QtCore.QPointF(x1, y1)); s.addPoint(QtCore.QPointF(x2, y2)); s.close(); return s
 
-    def export_segments_to_txt(self):
-        img_p = getattr(self, '_image_path', None) or self._filename
-        if not img_p: return
-        self.saveLabels(osp.splitext(img_p)[0] + ".json")
-        canvas = self._canvas_widgets.canvas; h, w = canvas.pixmap.height(), canvas.pixmap.width()
-        out = [f"{s.points[0].x():.2f}, {s.points[-1].x():.2f}, {s.points[0].y():.2f}, {s.points[-1].y():.2f}, {h}, {w}" for s in canvas.shapes if len(s.points)>=2]
-        with open(osp.splitext(img_p)[0] + ".txt", 'w') as f: f.write("\n".join(out))
-        self.statusBar().showMessage("Dataset salvato correttamente.")
-
     def project_lines_preview(self):
         canvas = self._canvas_widgets.canvas
         if not canvas.pixmap: return
@@ -3808,16 +3784,67 @@ class MainWindow(QtWidgets.QMainWindow):
         for s in projected: self.addLabel(s)
         canvas.update(); self.setDirty()
 
-    # --- UI & SYNC CORE ---
+    def export_segments_to_txt(self):
+        img_p = self._image_path or self._filename
+        if not img_p: return
+        self.saveLabels(osp.splitext(img_p)[0] + ".json")
+        canvas = self._canvas_widgets.canvas; h, w = canvas.pixmap.height(), canvas.pixmap.width()
+        out = [f"{s.points[0].x():.2f}, {s.points[-1].x():.2f}, {s.points[0].y():.2f}, {s.points[-1].y():.2f}, {h}, {w}" for s in canvas.shapes if len(s.points)>=2]
+        with open(osp.splitext(img_p)[0] + ".txt", 'w') as f: f.write("\n".join(out))
+        self.statusBar().showMessage("Esportazione TXT completata.")
+
+    # --- GESTIONE SALVATAGGIO E FILE (FISSA ATTRIBUTERROR) ---
+
+    def saveFile(self, _=False):
+        filename = self.saveFileDialog()
+        return self._saveFile(filename) if filename else False
+
+    def saveFileAs(self, _=False):
+        return self.saveFile()
+
+    def _saveFile(self, filename):
+        if filename and self.saveLabels(filename):
+            self.addRecentFile(filename)
+            self.setClean()
+            return True
+        return False
+
+    def saveFileDialog(self):
+        d = self._output_dir or (osp.dirname(self._filename) if self._filename else ".")
+        f, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", osp.join(d, osp.basename(osp.splitext(self._filename)[0] if self._filename else "untitled") + ".json"), "JSON (*.json)")
+        return f
+
+    def saveLabels(self, filename):
+        lf = LabelFile(); shapes = []
+        for i in range(self._docks.label_list.count()):
+            s = self._docks.label_list.item(i).shape()
+            shapes.append(dict(label=s.label, points=[(p.x(),p.y()) for p in s.points], group_id=None, shape_type="polygon", flags={}, description="", mask=None))
+        try:
+            lf.save(filename, shapes, osp.relpath(self._image_path, osp.dirname(filename)), None, self._image.height(), self._image.width())
+            return True
+        except: return False
+
+    def addRecentFile(self, filename):
+        if filename in self._recent_files: self._recent_files.remove(filename)
+        self._recent_files.insert(0, filename)
+
+    def setDirty(self):
+        self._is_changed = True
+        if hasattr(self, '_actions'): self._actions.save.setEnabled(True)
+
+    def setClean(self):
+        self._is_changed = False
+        if hasattr(self, '_actions'): self._actions.save.setEnabled(False)
+
+    # --- UI & CANVAS SYNC ---
 
     def addLabel(self, shape: Shape):
         if shape not in self._canvas_widgets.canvas.shapes:
             self._canvas_widgets.canvas.shapes.append(shape)
-        text = shape.label if shape.group_id is None else f"{shape.label} ({shape.group_id})"
-        item = LabelListWidgetItem(text, shape); self._docks.label_list.addItem(item)
+        item = LabelListWidgetItem(shape.label, shape); self._docks.label_list.addItem(item)
         r, g, b = tuple(LABEL_COLORMAP[(self._docks.label_list.count()) % len(LABEL_COLORMAP)].tolist())
         shape.line_color = QtGui.QColor(r,g,b); shape.fill_color = QtGui.QColor(r,g,b,128)
-        item.setText(f'{html.escape(text)} <font color="#{r:02x}{g:02x}{b:02x}">●</font>')
+        item.setText(f'{html.escape(shape.label)} <font color="#{r:02x}{g:02x}{b:02x}">●</font>')
 
     def toggleShapes(self, value=None):
         for i in range(self._docks.label_list.count()):
@@ -3835,16 +3862,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     it.setSelected(True); self._docks.label_list.scrollToItem(it); break
         except: pass
 
-    # --- ACTION SETUP ---
+    # --- AZIONI E TOOLBAR ---
 
     def _setup_actions(self) -> _Actions:
-        action = functools.partial(utils.newAction, self); s = self._config.get("shortcuts", {})
+        action = functools.partial(utils.newAction, self)
         save = action("&Save", self.saveFile, "Ctrl+S", "floppy-disk.svg", enabled=False)
         open_ = action("&Open", self._open_file_with_dialog, "Ctrl+O", "folder-open.svg")
         edit_m = action("Edit", lambda: self._switch_canvas_mode(True), "Ctrl+J", "note-pencil.svg")
         poly = action("Polygon", lambda: self._switch_canvas_mode(False, "polygon"), "Ctrl+N", "polygon.svg")
         
-        # RESEARCH
         auto_l = action("LSD Auto", self.auto_detect_lines, "Ctrl+Shift+X", "magic.svg")
         merge_l = action("Merge", self.merge_parallel_lines, "Ctrl+Shift+M", "merging.svg")
         proj_l = action("Project", self.project_lines_preview, "Ctrl+Shift+P")
@@ -3853,26 +3879,25 @@ class MainWindow(QtWidgets.QMainWindow):
         del_s = action("Delete", self.deleteSelectedShape, "Delete", "trash.svg", enabled=False)
         undo = action("Undo", self.undoShapeEdit, "Ctrl+Z", "arrow-u-up-left.svg", enabled=False)
 
-        draw_l = [("polygon", poly), ("LSD", auto_l), ("Merge", merge_l), ("Project", proj_l), ("SaveTXT", save_t)]
-        
+        draw_list = [("polygon", poly), ("LSD", auto_l), ("Merge", merge_l), ("Project", proj_l), ("SaveTXT", save_t)]
+        on_load = (action("Close", self.resetState), poly, auto_l, merge_l, proj_l, save_t)
+
         return _Actions(
             about=action("About", lambda: None), save=save, save_as=save, save_auto=save, save_with_image_data=save, change_output_dir=save,
-            open=open_, close=action("Close", self.closeFile), delete_file=action("DelFile", self.deleteFile),
+            open=open_, close=action("Close", self.resetState), delete_file=action("DelFile", lambda: None),
             toggle_keep_prev_mode=action("KPrev", checkable=True), toggle_keep_prev_brightness_contrast=action("KBC", checkable=True),
-            delete=del_s, edit=action("EditLbl", lambda: None), duplicate=action("Dupl", lambda: None), copy=action("Copy", self.copySelectedShape),
+            delete=del_s, edit=action("Edit", lambda: None), duplicate=action("Dupl", lambda: None), copy=action("Copy", self.copySelectedShape),
             paste=action("Paste", self.pasteSelectedShape), undo_last_point=action("UndoPt", lambda: None), undo=undo, remove_point=action("RemPt", lambda: None),
-            create_mode=poly, edit_mode=edit_m, create_rectangle_mode=None, create_circle_mode=None, create_line_mode=None, create_point_mode=None,
-            create_line_strip_mode=None, create_ai_polygon_mode=None, create_ai_mask_mode=None, auto_detect=auto_l, merge_lines=merge_l, project_lines=proj_l,
-            save_txt=save_t, open_next_img=action("Next", self._open_next_image), open_prev_img=action("Prev", self._open_prev_image), keep_prev_scale=action("KScal", checkable=True),
-            fit_window=action("FitW", self.setFitWindow, checkable=True), fit_width=action("FitWid", self.setFitWidth, checkable=True), brightness_contrast=action("BC", self.brightnessContrast),
-            zoom_in=action("Z+", lambda: self._add_zoom(1.1)), zoom_out=action("Z-", lambda: self._add_zoom(0.9)), zoom_org=action("Z100", self._set_zoom_to_original),
+            create_mode=poly, edit_mode=edit_m, auto_detect=auto_l, merge_lines=merge_l, project_lines=proj_l, save_txt=save_t,
+            open_next_img=action("Next", self._open_next_image), open_prev_img=action("Prev", self._open_prev_image), keep_prev_scale=action("KScal", checkable=True),
+            fit_window=action("FitW", self.setFitWindow, checkable=True), fit_width=action("FitWid", self.setFitWidth, checkable=True), brightness_contrast=action("BC", lambda: None),
+            zoom_in=action("Z+", lambda: self._add_zoom(1.1)), zoom_out=action("Z-", lambda: self._add_zoom(0.9)), zoom_org=action("Z100", lambda: None),
             reset_layout=action("Reset", lambda: None), fill_drawing=action("Fill", checkable=True), hide_all=action("Hide", functools.partial(self.toggleShapes, False)),
             show_all=action("Show", functools.partial(self.toggleShapes, True)), toggle_all=action("Tog", functools.partial(self.toggleShapes, None)),
-            open_dir=action("OpenDir", self._open_dir_with_dialog), zoom_widget_action=None, draw=draw_l, zoom=(save,), on_load_active=(auto_l, merge_l, proj_l, save_t),
-            on_shapes_present=(del_s,), context_menu=(auto_l, merge_l), edit_menu=(None,)
+            open_dir=action("OpenDir", self._open_dir_with_dialog), draw=draw_list, on_load_active=on_load
         )
 
-    # --- INTERNAL QT METHODS ---
+    # --- METODI BOILERPLATE QT ---
 
     def _setup_canvas(self):
         c = Canvas(epsilon=10.0); c.zoomRequest.connect(self._zoom_requested); c.mouseMoved.connect(self._update_status_stats)
@@ -3883,6 +3908,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _setup_dock_widgets(self) -> _DockWidgets:
         l_list, f_list, u_list, f_search = LabelListWidget(), QtWidgets.QListWidget(), UniqueLabelQListWidget(), QtWidgets.QLineEdit()
         l_list.itemSelectionChanged.connect(self._label_selection_changed)
+        f_list.itemSelectionChanged.connect(self.fileSelectionChanged)
         d_label, d_shape, d_file = QtWidgets.QDockWidget("Labels", self), QtWidgets.QDockWidget("Annotations", self), QtWidgets.QDockWidget("Files", self)
         d_label.setWidget(u_list); d_shape.setWidget(l_list); cw = QtWidgets.QWidget(); ly = QtWidgets.QVBoxLayout(cw); ly.addWidget(f_search); ly.addWidget(f_list); d_file.setWidget(cw)
         for d in [d_label, d_shape, d_file]: self.addDockWidget(Qt.RightDockWidgetArea, d)
@@ -3892,21 +3918,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addToolBar(Qt.TopToolBarArea, ToolBar("Research", [self._actions.auto_detect, self._actions.merge_lines, self._actions.project_lines, self._actions.save_txt, None, self._actions.save, self._actions.undo]))
         self.addToolBar(Qt.LeftToolBarArea, ToolBar("Draw", [a for _, a in self._actions.draw], Qt.Vertical))
 
-    def saveLabels(self, filename):
-        lf = LabelFile(); shapes = [dict(label=self._docks.label_list.item(i).shape().label, points=[(p.x(),p.y()) for p in self._docks.label_list.item(i).shape().points], shape_type="polygon", group_id=None, flags={}, description="", mask=None) for i in range(self._docks.label_list.count())]
-        try: lf.save(filename, shapes, osp.relpath(self._image_path, osp.dirname(filename)), None, self._image.height(), self._image.width()); return True
-        except: return False
-
     def _load_file(self, filename):
-        if not filename or not osp.exists(filename): return
+        if not filename or not osp.exists(filename): return False
         self.resetState(); self._image_path = filename; self._filename = filename
-        self.imageData = LabelFile.load_image_file(filename); self._image = QtGui.QImage.fromData(self.imageData)
-        self._canvas_widgets.canvas.loadPixmap(QtGui.QPixmap.fromImage(self._image))
-        lf_p = osp.splitext(filename)[0] + ".json"
-        if osp.exists(lf_p):
-            for d in LabelFile(lf_p).shapes:
-                s = Shape(label=d["label"]); [s.addPoint(QtCore.QPointF(p[0],p[1])) for p in d["points"]]; s.close(); self.addLabel(s)
-        self.setClean(); self.toggleActions(True)
+        try:
+            self.imageData = LabelFile.load_image_file(filename); self._image = QtGui.QImage.fromData(self.imageData)
+            self._canvas_widgets.canvas.loadPixmap(QtGui.QPixmap.fromImage(self._image))
+            lf_p = osp.splitext(filename)[0] + ".json"
+            if osp.exists(lf_p):
+                for d in LabelFile(lf_p).shapes:
+                    s = Shape(label=d["label"]); [s.addPoint(QtCore.QPointF(p[0],p[1])) for p in d["points"]]; s.close(); self.addLabel(s)
+            self.setClean(); self.toggleActions(True); return True
+        except: return False
 
     def newShape(self):
         res = self._label_dialog.popUp(self.get_next_label())
@@ -3924,9 +3947,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._canvas_widgets.canvas.restoreShape(); self._docks.label_list.clear()
         for s in self._canvas_widgets.canvas.shapes: self.addLabel(s)
 
-    def resetState(self): self._docks.label_list.clear(); self._canvas_widgets.canvas.resetState()
-    def setDirty(self): self._is_changed = True; self._actions.save.setEnabled(True)
-    def setClean(self): self._is_changed = False; self._actions.save.setEnabled(False)
+    def resetState(self): self._docks.label_list.clear(); self._canvas_widgets.canvas.resetState(); self.setClean()
     def toggleActions(self, v): [a.setEnabled(v) for a in self._actions.on_load_active]
     def _zoom_requested(self, d, p): self._add_zoom(1.1 if d>0 else 0.9)
     def _add_zoom(self, inc): self._canvas_widgets.zoom_widget.setValue(int(self._canvas_widgets.zoom_widget.value()*inc))
@@ -3939,7 +3960,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _open_dir_with_dialog(self):
         d = QtWidgets.QFileDialog.getExistingDirectory(self, "Dir"); [self._import_images_from_dir(d) if d else None]
     def _import_images_from_dir(self, r):
-        self._prev_opened_dir = r; self._docks.file_list.clear()
+        self._filename = None; self._docks.file_list.clear()
         for f in _scan_image_files(r): self._docks.file_list.addItem(f)
     def _open_next_image(self):
         r = self._docks.file_list.currentRow() + 1; [self._docks.file_list.setCurrentRow(r) if r < self._docks.file_list.count() else None]
@@ -3948,11 +3969,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def _setup_app_state(self, o, f): self._output_dir = o; [self._load_file(f) if f else None]
     def _load_config(self, f, o): return f, load_config(f, o or {})
     def closeFile(self): self.resetState()
-    def deleteFile(self): pass
     def brightnessContrast(self): pass
     def setFitWindow(self, _): pass
     def setFitWidth(self, _): pass
-    def _set_zoom_to_original(self): self._canvas_widgets.zoom_widget.setValue(100)
+    def _update_shape_color(self, s): pass
+    def _setup_status_bar(self): 
+        m = QtWidgets.QLabel("Ready"); s = StatusStats(); self.statusBar().addWidget(m, 1); self.statusBar().addWidget(s, 0)
+        return _StatusBarWidgets(m, s)
+    def _switch_canvas_mode(self, e, m=None): self._canvas_widgets.canvas.setEditing(e)
     def fileSearchChanged(self): pass
     def updateFileMenu(self): pass
     def populateModeActions(self): pass
@@ -3960,10 +3984,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def copySelectedShape(self): pass
     def pasteSelectedShape(self): pass
     def removeSelectedPoint(self): pass
-    def _setup_status_bar(self): 
-        m = QtWidgets.QLabel("Ready"); s = StatusStats(); self.statusBar().addWidget(m, 1); self.statusBar().addWidget(s, 0)
-        return _StatusBarWidgets(m, s)
-    def _switch_canvas_mode(self, e, m=None): self._canvas_widgets.canvas.setEditing(e)
+    def _submit_ai_prompt(self, _): pass
+    def deleteFile(self): pass
 
 def _scan_image_files(r):
     ext = ('.png', '.jpg', '.jpeg', '.bmp')
