@@ -1484,9 +1484,10 @@ class MainWindow(QtWidgets.QMainWindow):
             
                 self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
                 canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
-
-        canvas.update()
-        self.dirty = True # Usa l'attributo invece del metodo per evitare TypeError
+        self.setEditMode() 
+        canvas.setEditing(True) #Aggiunta
+        canvas.update() #Aggiutna
+        self.setDirty()
         self._actions.save.setEnabled(True)
         self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
          
