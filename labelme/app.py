@@ -1082,7 +1082,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
             
 
-   def sync_selection_to_list(self):
+    def sync_selection_to_list(self):
         """Evidenzia l'item nella lista laterale quando si clicca una linea sul canvas."""
         canvas = self._canvas_widgets.canvas
         # Cerchiamo il widget della lista annotazioni
