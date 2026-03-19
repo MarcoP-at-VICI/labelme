@@ -1257,62 +1257,110 @@ class MainWindow(QtWidgets.QMainWindow):
     #         QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
     #         print(f"DEBUG ERROR: {e}")
     def export_segments_to_txt(self):
-        """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
-        target_canvas = self._canvas_widgets.canvas
-        if not target_canvas or not target_canvas.pixmap:
-            self.statusBar().showMessage("Errore: Immagine non caricata.")
+        """Salva il JSON automaticamente e poi genera il TXT (x1, x2, y1, y2, H, W)."""
+        import os
+        
+        # 1. Recupero percorsi
+        if not self.imagePath or not os.path.exists(self.imagePath):
+            self.statusBar().showMessage("Errore: Nessuna immagine caricata.")
             return
-            
-        # 1. Recupero dimensioni immagine (H, W)
-        img_w = target_canvas.pixmap.width()
-        img_h = target_canvas.pixmap.height()
+
+        # Definiamo il percorso del JSON (stesso nome dell'immagine)
+        json_path = os.path.splitext(self.imagePath)[0] + ".json"
+        
+        # 2. SALVATAGGIO JSON FORZATO (Metodo interno di LabelMe)
+        # Questo salva lo stato attuale delle shapes nel file JSON
+        try:
+            self.saveLabels(json_path)
+            print(f"DEBUG: JSON salvato correttamente in {json_path}")
+        except Exception as e:
+            self.errorMessage("Errore Salvataggio JSON", str(e))
+            return
+
+        # 3. GENERAZIONE TXT (Formato Reale richiesto)
+        canvas = self._canvas_widgets.canvas
+        img_w = canvas.pixmap.width()
+        img_h = canvas.pixmap.height()
         
         lines_output = []
+        for shape in canvas.shapes:
+            num_points = len(shape.points)
+            if num_points < 2: continue
 
+            # Esportiamo ogni segmento della polilinea/linea
+            for i in range(num_points - 1):
+                p1, p2 = shape.points[i], shape.points[i+1]
+                # Formato: x1, x2, y1, y2, H, W
+                line_str = f"{p1.x():.2f}, {p2.x():.2f}, {p1.y():.2f}, {p2.y():.2f}, {img_h}, {img_w}"
+                lines_output.append(line_str)
+
+        # Salviamo il TXT con lo stesso nome
+        txt_path = os.path.splitext(self.imagePath)[0] + ".txt"
         try:
-            for shape in target_canvas.shapes:
-                num_points = len(shape.points)
-                if num_points < 2:
-                    continue
-
-                # Gestione polilinee: salviamo ogni segmento consecutivo separatamente
-                # Se è un poligono chiuso, colleghiamo l'ultimo al primo
-                is_closed = shape.shape_type == "polygon" and getattr(shape, 'is_closed', True)
-                range_limit = num_points if is_closed else num_points - 1
-
-                for i in range(range_limit):
-                    p1 = shape.points[i]
-                    p2 = shape.points[(i + 1) % num_points]
-                    
-                    # Coordinate reali (senza proiezioni ai bordi)
-                    x1, y1 = p1.x(), p1.y()
-                    x2, y2 = p2.x(), p2.y()
-
-                    # 2. Formattazione richiesta: (x1, x2, y1, y2, altezza, larghezza)
-                    # Usiamo i nomi delle variabili per chiarezza nel file o solo i numeri? 
-                    # Qui metto il formato numerico pulito per il parsing della tua rete neurale:
-                    line_str = f"{x1:.2f}, {x2:.2f}, {y1:.2f}, {y2:.2f}, {img_h}, {img_w}"
-                    lines_output.append(line_str)
-
-            if not lines_output:
-                self.statusBar().showMessage("Nessun segmento da esportare.")
-                return
-
+            with open(txt_path, 'w', encoding='utf-8') as f:
+                f.write("\n".join(lines_output))
             
-            # 3. Dialogo di salvataggio
-            base_path = os.path.splitext(self.imagePath)[0] if hasattr(self, 'imagePath') else ""
-            save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-                self, "Esporta Dataset Reale", "", "TXT (*.txt)"
-            )
-            
-            if save_path:
-                with open(save_path, 'w', encoding='utf-8') as f:
-                    # Scriviamo ogni segmento su una nuova riga
-                    f.write("\n".join(lines_output))
-                self.statusBar().showMessage(f"Salvato: {len(lines_output)} segmenti in formato (x1,x2,y1,y2,H,W).")
-            
+            self.setDirty(False) # Reset dello stato "modificato"
+            self.statusBar().showMessage(f"Dataset aggiornato: JSON + TXT ({len(lines_output)} seg.)")
         except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
+            self.errorMessage("Errore Scrittura TXT", str(e))        
+    # def export_segments_to_txt(self):
+    #     """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
+    #     target_canvas = self._canvas_widgets.canvas
+    #     if not target_canvas or not target_canvas.pixmap:
+    #         self.statusBar().showMessage("Errore: Immagine non caricata.")
+    #         return
+            
+    #     # 1. Recupero dimensioni immagine (H, W)
+    #     img_w = target_canvas.pixmap.width()
+    #     img_h = target_canvas.pixmap.height()
+        
+    #     lines_output = []
+
+    #     try:
+    #         for shape in target_canvas.shapes:
+    #             num_points = len(shape.points)
+    #             if num_points < 2:
+    #                 continue
+
+    #             # Gestione polilinee: salviamo ogni segmento consecutivo separatamente
+    #             # Se è un poligono chiuso, colleghiamo l'ultimo al primo
+    #             is_closed = shape.shape_type == "polygon" and getattr(shape, 'is_closed', True)
+    #             range_limit = num_points if is_closed else num_points - 1
+
+    #             for i in range(range_limit):
+    #                 p1 = shape.points[i]
+    #                 p2 = shape.points[(i + 1) % num_points]
+                    
+    #                 # Coordinate reali (senza proiezioni ai bordi)
+    #                 x1, y1 = p1.x(), p1.y()
+    #                 x2, y2 = p2.x(), p2.y()
+
+    #                 # 2. Formattazione richiesta: (x1, x2, y1, y2, altezza, larghezza)
+    #                 # Usiamo i nomi delle variabili per chiarezza nel file o solo i numeri? 
+    #                 # Qui metto il formato numerico pulito per il parsing della tua rete neurale:
+    #                 line_str = f"{x1:.2f}, {x2:.2f}, {y1:.2f}, {y2:.2f}, {img_h}, {img_w}"
+    #                 lines_output.append(line_str)
+
+    #         if not lines_output:
+    #             self.statusBar().showMessage("Nessun segmento da esportare.")
+    #             return
+
+            
+    #         # 3. Dialogo di salvataggio
+    #         base_path = os.path.splitext(self.imagePath)[0] if hasattr(self, 'imagePath') else ""
+    #         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+    #             self, "Esporta Dataset Reale", "", "TXT (*.txt)"
+    #         )
+            
+    #         if save_path:
+    #             with open(save_path, 'w', encoding='utf-8') as f:
+    #                 # Scriviamo ogni segmento su una nuova riga
+    #                 f.write("\n".join(lines_output))
+    #             self.statusBar().showMessage(f"Salvato: {len(lines_output)} segmenti in formato (x1,x2,y1,y2,H,W).")
+            
+    #     except Exception as e:
+    #         QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
 
     def merge_parallel_lines(self):
         """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
