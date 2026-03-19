@@ -2781,23 +2781,12 @@ class MainWindow(QtWidgets.QMainWindow):
             config_file=config_file, config_overrides=config_overrides
         )
 
-        # set default shape colors
         Shape.line_color = QtGui.QColor(*self._config["shape"]["line_color"])
         Shape.fill_color = QtGui.QColor(*self._config["shape"]["fill_color"])
-        Shape.select_line_color = QtGui.QColor(
-            *self._config["shape"]["select_line_color"]
-        )
-        Shape.select_fill_color = QtGui.QColor(
-            *self._config["shape"]["select_fill_color"]
-        )
-        Shape.vertex_fill_color = QtGui.QColor(
-            *self._config["shape"]["vertex_fill_color"]
-        )
-        Shape.hvertex_fill_color = QtGui.QColor(
-            *self._config["shape"]["hvertex_fill_color"]
-        )
-
-        # Set point size from config file
+        Shape.select_line_color = QtGui.QColor(*self._config["shape"]["select_line_color"])
+        Shape.select_fill_color = QtGui.QColor(*self._config["shape"]["select_fill_color"])
+        Shape.vertex_fill_color = QtGui.QColor(*self._config["shape"]["vertex_fill_color"])
+        Shape.hvertex_fill_color = QtGui.QColor(*self._config["shape"]["hvertex_fill_color"])
         Shape.point_size = self._config["shape"]["point_size"]
 
         self._copied_shapes = []
@@ -2817,6 +2806,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
+        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list)
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -2838,15 +2828,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._ai_text.setEnabled(False)
 
         self._setup_toolbars()
-
         self._status_bar = self._setup_status_bar()
-
         self._setup_app_state(output_dir=output_dir, filename=filename)
 
         self.updateFileMenu()
-
         self._canvas_widgets.zoom_widget.valueChanged.connect(self._paint_canvas)
-
         self.populateModeActions()
 
     def _setup_actions(self) -> _Actions:
@@ -3476,7 +3462,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for coords in raw_coords:
             x1_raw, y1_raw, x2_raw, y2_raw = coords
             
-            # Snap in fase di inserimento
             x1, y1 = self._apply_snap(x1_raw, y1_raw)
             x2, y2 = self._apply_snap(x2_raw, y2_raw)
             
@@ -3485,7 +3470,6 @@ class MainWindow(QtWidgets.QMainWindow):
             
             unique_label = self.get_next_label(prefix="L_")
             
-            # IMPERATIVO: shape_type="line" per poterle selezionare col mouse.
             shape = Shape(label=unique_label, shape_type="line") 
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
@@ -3554,7 +3538,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     valid_pts.sort(key=lambda p: (p[0], p[1]))
                     ps, pe = valid_pts[0], valid_pts[-1]
                     
-                    # Usa "line" in modo coerente
                     new_shape = Shape(label=shape.label, shape_type="line")
                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
@@ -4770,6 +4753,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._canvas_widgets.canvas.undoLastLine()
             if self._canvas_widgets.canvas.shapesBackups:
                 self._canvas_widgets.canvas.shapesBackups.pop()
+    # Callback functions:
 
     
     def scrollRequest(self, delta: int, orientation: Qt.Orientation) -> None:
@@ -5274,28 +5258,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def deleteFile(self) -> None:
         mb = QtWidgets.QMessageBox
-        msg = self.tr(
-            "You are about to permanently delete this label file, proceed anyway?"
-        )
+        msg = self.tr("You are about to permanently delete this label file, proceed anyway?")
         answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
-        if answer != mb.Yes:
-            return
+        if answer != mb.Yes: return
 
         label_file = self.getLabelFile()
         if osp.exists(label_file):
             os.remove(label_file)
-            logger.info(f"Label file is removed: {label_file}")
 
         item = self._docks.file_list.currentItem()
-        if item:
-            item.setCheckState(Qt.Unchecked)
+        if item: item.setCheckState(Qt.Unchecked)
 
-        self.resetState()
-        self.setClean()
+        # Svuota Canvas e Label List ma mantieni l'immagine aperta
         self._canvas_widgets.canvas.shapes = []
-        if hasattr(self._docks, 'label_list'):
-            self._docks.label_list.clear()
+        self._docks.label_list.clear()
         self._canvas_widgets.canvas.update()
+        self.setClean()
 
     def _open_config_file(self) -> None:
         if self._config_file is None:
@@ -5369,17 +5347,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = not self._config["keep_prev"]
 
     def removeSelectedPoint(self) -> None:
-        self._canvas_widgets.canvas.removeSelectedPoint()
+        shape = self._canvas_widgets.canvas.hShape
+        if shape and len(shape.points) <= 2:
+            # FIX: Se clicchi per sbaglio il vertice di una linea a 2 punti,
+            # e premi Cancella, cancelliamo l'intera linea invece di dare errore.
+            self._canvas_widgets.canvas.deleteShape(shape)
+            self.remLabels([shape])
+            self._canvas_widgets.canvas.deSelectShape()
+        else:
+            self._canvas_widgets.canvas.removeSelectedPoint()
+            if shape and not shape.points:
+                self._canvas_widgets.canvas.deleteShape(shape)
+                self.remLabels([shape])
+
         self._canvas_widgets.canvas.update()
-        if (
-            self._canvas_widgets.canvas.hShape
-            and not self._canvas_widgets.canvas.hShape.points
-        ):
-            self._canvas_widgets.canvas.deleteShape(self._canvas_widgets.canvas.hShape)
-            self.remLabels([self._canvas_widgets.canvas.hShape])
-            if self.noShapes():
-                for action in self._actions.on_shapes_present:
-                    action.setEnabled(False)
+        if self.noShapes():
+            for action in self._actions.on_shapes_present:
+                action.setEnabled(False)
         self.setDirty()
 
     def deleteSelectedShape(self) -> None:
@@ -5520,4 +5504,3 @@ def _scan_image_files(root_dir: str) -> list[str]:
 
     logger.debug("found {:d} images in {!r}", len(images), root_dir)
     return natsort.os_sorted(images)
-
