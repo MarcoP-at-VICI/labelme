@@ -2806,7 +2806,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
-        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list)
+        
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
