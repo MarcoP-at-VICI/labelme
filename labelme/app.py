@@ -2817,7 +2817,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
-        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list) #attiva la selezione delle linee automatiche
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -3405,11 +3404,9 @@ class MainWindow(QtWidgets.QMainWindow):
         max_id = -1
         target_canvas = self._canvas_widgets.canvas
         
-        # Scansiona tutte le forme già presenti per trovare l'indice massimo
         for shape in target_canvas.shapes:
             if shape.label and shape.label.startswith(prefix):
                 try:
-                    # Estrae la parte numerica (es. da "L_005" prende "005")
                     num_str = shape.label.replace(prefix, "")
                     num = int(num_str)
                     if num > max_id:
@@ -3417,7 +3414,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 except ValueError:
                     continue
         
-        # Restituisce il prossimo ID formattato con tre cifre (es. L_011)
         return f"{prefix}{max_id + 1:03d}"
 
     def _apply_snap(self, x, y, epsilon=12.0):
@@ -3505,11 +3501,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.addLabel(shape)
             elif hasattr(self, 'labelList'):
                 self.labelList.addShape(shape)
-        
-        try:
-            target_canvas.selectionChanged.connect(self.sync_selection_to_list)
-        except:
-            pass 
 
         if hasattr(target_canvas, 'storeShapes'):
             target_canvas.storeShapes()       
@@ -3519,26 +3510,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
         
         self._switch_canvas_mode(edit=True)
-            
-    def sync_selection_to_list(self):
-        """Sincronizza in sicurezza il click sulla linea nel canvas con la lista laterale."""
-        try:
-            canvas = self._canvas_widgets.canvas
-            label_list_widget = self._docks.label_list
-            
-            if not canvas.selectedShapes or label_list_widget is None:
-                return
-
-            shape = canvas.selectedShapes[-1]
-            label_list_widget.clearSelection()
-        
-            for item in label_list_widget:
-                if getattr(item, 'shape', lambda: None)() == shape:
-                    item.setSelected(True)
-                    label_list_widget.scrollToItem(item)
-                    break
-        except Exception as e:
-            print(f"Errore sincronizzazione: {e}")
 
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
@@ -3583,6 +3554,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     valid_pts.sort(key=lambda p: (p[0], p[1]))
                     ps, pe = valid_pts[0], valid_pts[-1]
                     
+                    # Usa "line" in modo coerente
                     new_shape = Shape(label=shape.label, shape_type="line")
                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
@@ -3591,6 +3563,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     new_shape.close()
                     new_projected_shapes.append(new_shape)
 
+        self._docks.label_list.blockSignals(True)
         target_canvas.shapes = []
         if hasattr(self._docks, 'label_list'):
             self._docks.label_list.clear()
@@ -3599,6 +3572,7 @@ class MainWindow(QtWidgets.QMainWindow):
             target_canvas.shapes.append(s)
             self.addLabel(s)
             
+        self._docks.label_list.blockSignals(False)
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
@@ -3687,6 +3661,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 merged_list.append(shapes[i])
 
+        self._docks.label_list.blockSignals(True)
         canvas.shapes = []
         canvas.selectedShapes = []
         if hasattr(self._docks, 'label_list'):
@@ -3699,6 +3674,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.addLabel(s) 
             canvas.shapes.append(s)
 
+        self._docks.label_list.blockSignals(False)
         self._switch_canvas_mode(edit=True)
         canvas.setEditing(True)
         canvas.update()
@@ -4370,7 +4346,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _edit_label(self, value=None):
         items = self._docks.label_list.selectedItems()
         if not items:
-            logger.warning("No label is selected, so cannot edit label.")
             return
 
         shape = items[0].shape()
@@ -4795,7 +4770,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._canvas_widgets.canvas.undoLastLine()
             if self._canvas_widgets.canvas.shapesBackups:
                 self._canvas_widgets.canvas.shapesBackups.pop()
-    # Callback functions:
 
     
     def scrollRequest(self, delta: int, orientation: Qt.Orientation) -> None:
@@ -5317,6 +5291,11 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setCheckState(Qt.Unchecked)
 
         self.resetState()
+        self.setClean()
+        self._canvas_widgets.canvas.shapes = []
+        if hasattr(self._docks, 'label_list'):
+            self._docks.label_list.clear()
+        self._canvas_widgets.canvas.update()
 
     def _open_config_file(self) -> None:
         if self._config_file is None:
@@ -5541,3 +5520,4 @@ def _scan_image_files(root_dir: str) -> list[str]:
 
     logger.debug("found {:d} images in {!r}", len(images), root_dir)
     return natsort.os_sorted(images)
+
