@@ -1468,31 +1468,54 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
 
 
-        # --- PARTE FINALE CORRETTA ---
-        # 1. Pulizia totale sincronizzata
-        canvas.shapes = []
-        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        if label_widget:
-                label_widget.clear()
+        # # --- PARTE FINALE CORRETTA ---
+        # # 1. Pulizia totale sincronizzata
+        # canvas.shapes = []
+        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        # if label_widget:
+        #         label_widget.clear()
 
-        # 2. Re-inserimento tramite addLabel
-        # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
-        for s in merged_list:
-                # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
-                if s.label == "Linea_Merged":
-                    s.label = self.get_next_label(prefix="L_")
+        # # 2. Re-inserimento tramite addLabel
+        # # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
+        # for s in merged_list:
+        #         # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
+        #         if s.label == "Linea_Merged":
+        #             s.label = self.get_next_label(prefix="L_")
             
-                self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
-                canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
+        #         self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
+        #         canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
+        # self.setEditMode() 
+        # canvas.setEditing(True) #Aggiunta
+        # canvas.update() #Aggiutna
+        # self.setDirty()
+        # self._actions.save.setEnabled(True)
+        # self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
+         
+         
+         # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
+        self._canvas_widgets.canvas.shapes = []
+        self.labelList.clear() 
+
+        # 2. Re-iniezione controllata
+        for s in merged_list:
+            # Se la linea è nuova, gli diamo il prossimo ID atomico
+            if s.label == "Linea_Merged":
+                s.label = self.get_next_label(prefix="L_")
+            
+            # REGISTRAZIONE UFFICIALE: Questo impedisce il crash ValueError
+            self.addLabel(s) 
+            # AGGIUNTA AL DISEGNO
+            self._canvas_widgets.canvas.shapes.append(s)
+
+        # 3. Ripristino Modalità Selezione (per poter cliccare subito)
         self.setEditMode() 
-        canvas.setEditing(True) #Aggiunta
-        canvas.update() #Aggiutna
-        self.setDirty()
+        self._canvas_widgets.canvas.setEditing(True)
+        
+        # 4. Stato Finale
+        self._canvas_widgets.canvas.update()
+        self.dirty = True 
         self._actions.save.setEnabled(True)
-        self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
-         
-         
-         
+        self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} segmenti.")
             
           
          
