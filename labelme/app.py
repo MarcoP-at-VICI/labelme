@@ -1142,51 +1142,126 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
 
-    def export_projected_to_txt(self):
-        """Salva le linee attualmente visibili (estese) in formato TXT."""
-        #1. SALVATAGGIO NATIVO (JSON)
-        # Chiamiamo la funzione nativa di LabelMe per assicurarci che lo stato sia salvato
-        try:
-            self.saveFile()
-        except Exception as e:
-            print(f"Nota: Salvataggio JSON saltato o fallito: {e}") # Apre la finestra di salvataggio standard o salva se già impostato
-        # 2. PREPARAZIONE DATI PER TXT
-        lines_output = [] # Inizializzazione fondamentale per evitare NameError
+    # def export_projected_to_txt(self):
+    #     """Salva le linee attualmente visibili (estese) in formato TXT."""
+    #     #1. SALVATAGGIO NATIVO (JSON)
+    #     # Chiamiamo la funzione nativa di LabelMe per assicurarci che lo stato sia salvato
+    #     try:
+    #         self.saveFile()
+    #     except Exception as e:
+    #         print(f"Nota: Salvataggio JSON saltato o fallito: {e}") # Apre la finestra di salvataggio standard o salva se già impostato
+    #     # 2. PREPARAZIONE DATI PER TXT
+    #     lines_output = [] # Inizializzazione fondamentale per evitare NameError
         
+    #     try:
+    #         # Recuperiamo le forme dal canvas
+    #         canvas = self._canvas_widgets.canvas
+    #         if not canvas or not hasattr(canvas, 'shapes'):
+    #             self.statusBar().showMessage("Errore: Canvas non accessibile.")
+    #             return
+
+    #         for shape in canvas.shapes:
+    #             if len(shape.points) >= 2:
+    #                 p1 = shape.points[0]
+    #                 p2 = shape.points[-1]
+    #                 # Formato x1 y1 x2 y2 con 2 decimali
+    #                 line_str = f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}"
+    #                 lines_output.append(line_str)
+
+    #         if not lines_output:
+    #             self.statusBar().showMessage("Nessuna linea valida da esportare.")
+    #             return
+
+    #         # 3. DIALOGO DI SALVATAGGIO
+    #         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+    #             self, "Esporta coordinate estese (TXT)", "", "TXT (*.txt)"
+    #         )
+            
+    #         if save_path:
+    #             with open(save_path, 'w', encoding='utf-8') as f:
+    #                 f.write("\n".join(lines_output))
+    #             self.statusBar().showMessage(f"Esportate {len(lines_output)} linee in TXT.")
+            
+    #     except Exception as e:
+    #         # Messaggio di errore dettagliato per il debugging
+    #         QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
+    #         print(f"DEBUG ERROR: {e}")
+    def export_projected_to_txt(self):
+        """Salva ogni segmento di linee/polilinee proiettato ai bordi + dimensioni W H."""
         try:
-            # Recuperiamo le forme dal canvas
-            canvas = self._canvas_widgets.canvas
-            if not canvas or not hasattr(canvas, 'shapes'):
-                self.statusBar().showMessage("Errore: Canvas non accessibile.")
-                return
+            self.saveFile() # Salvataggio JSON standard
+        except: pass
 
-            for shape in canvas.shapes:
-                if len(shape.points) >= 2:
-                    p1 = shape.points[0]
-                    p2 = shape.points[-1]
-                    # Formato x1 y1 x2 y2 con 2 decimali
-                    line_str = f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}"
-                    lines_output.append(line_str)
+        target_canvas = self._canvas_widgets.canvas
+        if not target_canvas or not target_canvas.pixmap:
+            self.statusBar().showMessage("Errore: Immagine non caricata.")
+            return
+            
+        # 1. Recupero dimensioni (Fondamentale per la tua ricerca)
+        img_w = target_canvas.pixmap.width()
+        img_h = target_canvas.pixmap.height()
+        
+        # Prima riga: WIDTH HEIGHT
+        lines_output = [f"{img_w} {img_h}"]
 
-            if not lines_output:
-                self.statusBar().showMessage("Nessuna linea valida da esportare.")
-                return
+        try:
+            for shape in target_canvas.shapes:
+                # Una polilinea di N punti ha (N-1) segmenti
+                # Un poligono chiuso di N punti ha N segmenti (l'ultimo torna al primo)
+                num_points = len(shape.points)
+                if num_points < 2:
+                    continue
 
-            # 3. DIALOGO DI SALVATAGGIO
+                # Determiniamo quanti segmenti processare
+                # Se è un poligono chiuso, colleghiamo l'ultimo punto al primo
+                is_closed = shape.shape_type == "polygon" and getattr(shape, 'is_closed', True)
+                range_limit = num_points if is_closed else num_points - 1
+
+                for i in range(range_limit):
+                    p1 = shape.points[i]
+                    p2 = shape.points[(i + 1) % num_points] # Torna a 0 se i è l'ultimo punto
+                    
+                    x1, y1 = p1.x(), p1.y()
+                    x2, y2 = p2.x(), p2.y()
+
+                    # Calcolo proiezione ai bordi (Geometria Proiettiva)
+                    dx, dy = x2 - x1, y2 - y1
+                    if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+
+                    t_candidates = []
+                    if abs(dx) > 1e-10:
+                        t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
+                    if abs(dy) > 1e-10:
+                        t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
+
+                    valid_pts = []
+                    for t in t_candidates:
+                        ix, iy = x1 + t * dx, y1 + t * dy
+                        # Controllo confini con piccola tolleranza
+                        if -0.1 <= ix <= img_w + 0.1 and -0.1 <= iy <= img_h + 0.1:
+                            valid_pts.append((ix, iy))
+                    
+                    if len(valid_pts) >= 2:
+                        # Ordiniamo i punti per coerenza spaziale
+                        valid_pts.sort(key=lambda p: (p[0], p[1]))
+                        ps, pe = valid_pts[0], valid_pts[-1]
+                        
+                        # Salvataggio: LABEL x1 y1 x2 y2
+                        lines_output.append(f"{shape.label} {ps[0]:.2f} {ps[1]:.2f} {pe[0]:.2f} {pe[1]:.2f}")
+
+            # 2. Dialogo di salvataggio
             save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-                self, "Esporta coordinate estese (TXT)", "", "TXT (*.txt)"
+                self, "Esporta Dataset Segmenti", "", "TXT (*.txt)"
             )
             
             if save_path:
                 with open(save_path, 'w', encoding='utf-8') as f:
                     f.write("\n".join(lines_output))
-                self.statusBar().showMessage(f"Esportate {len(lines_output)} linee in TXT.")
+                self.statusBar().showMessage(f"Esportati {len(lines_output)-1} segmenti ({img_w}x{img_h}).")
             
         except Exception as e:
-            # Messaggio di errore dettagliato per il debugging
-            QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
-            print(f"DEBUG ERROR: {e}")
-
+            QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
+        
     def merge_parallel_lines(self):
         """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
         import numpy as np
