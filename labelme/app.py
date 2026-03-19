@@ -1103,6 +1103,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     item.setSelected(True)
                     label_list.scrollToItem(item)
                     break
+            canvas.update()
         except Exception as e:
             print(f"Errore sincronizzazione: {e}")
     # def sync_selection_to_list(self):
