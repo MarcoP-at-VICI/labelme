@@ -1453,19 +1453,54 @@ class MainWindow(QtWidgets.QMainWindow):
                 merged_list.append(new_shape)
             else:
                 merged_list.append(shapes[i])
-
+    
         # Aggiornamento UI (Safe Mode)
-        canvas.shapes = merged_list
+        
+        # canvas.shapes = merged_list
+        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+        # if label_widget:
+        #     label_widget.clear()
+        #     for s in merged_list:
+        #         self.addLabel(s)
+        
+        # canvas.update()
+        # self.setDirty()
+        # self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
+
+
+        # --- PARTE FINALE CORRETTA ---
+        # 1. Pulizia totale sincronizzata
+        canvas.shapes = []
         label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
         if label_widget:
-            label_widget.clear()
-            for s in merged_list:
-                self.addLabel(s)
-        
-        canvas.update()
-        self.setDirty()
-        self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
+                label_widget.clear()
 
+        # 2. Re-inserimento tramite addLabel
+        # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
+        for s in merged_list:
+                # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
+                if s.label == "Linea_Merged":
+                    s.label = self.get_next_label(prefix="L_")
+            
+                self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
+                canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
+
+        canvas.update()
+        self.dirty = True # Usa l'attributo invece del metodo per evitare TypeError
+        self._actions.save.setEnabled(True)
+        self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
+         
+         
+         
+            
+          
+         
+        
+
+
+
+        
+        
     def _dist_point_to_line(self, p, l1, l2):
         """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
         import numpy as np
