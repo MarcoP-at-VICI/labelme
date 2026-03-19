@@ -1493,30 +1493,44 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
          
          
-         # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
+        # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
         self._canvas_widgets.canvas.shapes = []
-        self.labelList.clear() 
-
-        # 2. Re-iniezione controllata
+        
+        # Cerchiamo di pulire la lista in modo sicuro
+        # Proviamo i due nomi comuni che LabelMe usa per il widget lista
+        l_widget = getattr(self, 'labelList', None) or getattr(self, 'label_list', None)
+        if l_widget is not None:
+            try:
+                l_widget.clear()
+            except AttributeError:
+                # Se è un oggetto complesso, cerchiamo la view interna
+                if hasattr(l_widget, 'view'):
+                    l_widget.view.clear()
+        
+        # 2. Re-iniezione controllata con registrazione ufficiale
         for s in merged_list:
-            # Se la linea è nuova, gli diamo il prossimo ID atomico
-            if s.label == "Linea_Merged":
+            # Assegnazione ID progressivo
+            if s.label == "Linea_Merged" or not s.label:
                 s.label = self.get_next_label(prefix="L_")
             
-            # REGISTRAZIONE UFFICIALE: Questo impedisce il crash ValueError
+            # REGISTRAZIONE UFFICIALE: Questo lega la Shape alla MainWindow
+            # Impedisce il crash "ValueError: x not in list" durante la cancellazione
             self.addLabel(s) 
+            
             # AGGIUNTA AL DISEGNO
-            self._canvas_widgets.canvas.shapes.append(s)
+            if s not in self._canvas_widgets.canvas.shapes:
+                self._canvas_widgets.canvas.shapes.append(s)
 
-        # 3. Ripristino Modalità Selezione (per poter cliccare subito)
+        # 3. Ripristino Interfaccia e Modalità Selezione
         self.setEditMode() 
         self._canvas_widgets.canvas.setEditing(True)
         
-        # 4. Stato Finale
-        self._canvas_widgets.canvas.update()
+        # 4. Stato Finale e Update Grafico
         self.dirty = True 
         self._actions.save.setEnabled(True)
-        self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} segmenti.")
+        self._canvas_widgets.canvas.update()
+        
+        self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} linee.")
             
           
          
