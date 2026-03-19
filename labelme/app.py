@@ -1081,33 +1081,55 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
             
-
     def sync_selection_to_list(self):
-        """Sincronizza il click sulla linea con la lista laterale."""
-        canvas = self._canvas_widgets.canvas
-        # Cerchiamo la vera QListWidget dentro il dock
-        label_list_dock = self._docks.label_list
-        
-        # In LabelMe, la vera lista QListWidget è accessibile così:
-        inner_list = getattr(label_list_dock, 'labelList', None) or \
-                     getattr(label_list_dock, 'list_widget', None) or \
-                     label_list_dock # Fallback
-        
-        if not canvas.selectedShapes or not hasattr(inner_list, 'count'):
-            return
+        """Sincronizza click su linea e lista laterale senza crash."""
+        try:
+            canvas = self._canvas_widgets.canvas
+            # Accesso diretto alla lista etichette
+            label_list = getattr(self, 'labelList', None)
+            
+            if not canvas.selectedShapes or label_list is None:
+                return
 
-        shape = canvas.selectedShapes[-1]
-        inner_list.clearSelection()
+            shape = canvas.selectedShapes[-1]
+            label_list.clearSelection()
+            
+            # Cerchiamo l'item corrispondente
+            for i in range(label_list.count()):
+                item = label_list.item(i)
+                # Verifichiamo il riferimento originale della shape
+                if getattr(item, '_shape', None) == shape or getattr(item, 'shape', None) == shape:
+                    item.setSelected(True)
+                    label_list.scrollToItem(item)
+                    break
+        except Exception as e:
+            print(f"Errore sincronizzazione: {e}")
+    # def sync_selection_to_list(self):
+    #     """Sincronizza il click sulla linea con la lista laterale."""
+    #     canvas = self._canvas_widgets.canvas
+    #     # Cerchiamo la vera QListWidget dentro il dock
+    #     label_list_dock = self._docks.label_list
         
-        # Ora .count() funzionerà perché siamo sulla QListWidget corretta
-        for i in range(inner_list.count()):
-            item = inner_list.item(i)
-            if getattr(item, 'shape', None) == shape:
-                item.setSelected(True)
-                inner_list.scrollToItem(item)
-                break
+    #     # In LabelMe, la vera lista QListWidget è accessibile così:
+    #     inner_list = getattr(label_list_dock, 'labelList', None) or \
+    #                  getattr(label_list_dock, 'list_widget', None) or \
+    #                  label_list_dock # Fallback
+        
+    #     if not canvas.selectedShapes or not hasattr(inner_list, 'count'):
+    #         return
 
+    #     shape = canvas.selectedShapes[-1]
+    #     inner_list.clearSelection()
+        
+    #     # Ora .count() funzionerà perché siamo sulla QListWidget corretta
+    #     for i in range(inner_list.count()):
+    #         item = inner_list.item(i)
+    #         if getattr(item, 'shape', None) == shape:
+    #             item.setSelected(True)
+    #             inner_list.scrollToItem(item)
+    #             break
 
+   
         
     # def sync_selection_to_list(self):
     #     """Sincronizza il Canvas con la lista laterale (Annotation List)."""
