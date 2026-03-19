@@ -15,8 +15,6 @@
 # from pathlib import Path
 # from typing import Literal
 # from typing import NamedTuple
-# import math
-        
 
 # import imgviz
 # import natsort
@@ -30,7 +28,6 @@
 # from PyQt5.QtCore import Qt
 # from PyQt5.QtWidgets import QMessageBox
 # import cv2
-# import numpy as np
 # from qtpy import QtCore
 
 # from labelme import __appname__
@@ -59,7 +56,6 @@
 # from . import utils
 
 # # handle high-dpi scaling issue
-# # https://leomoon.com/journal/python/high-dpi-scaling-in-pyqt5
 # if hasattr(QtCore.Qt, "AA_EnableHighDpiScaling"):
 #     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 # if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
@@ -212,28 +208,16 @@
 #         super().__init__()
 #         self.setWindowTitle(__appname__)
         
-
 #         self._config_file, self._config = self._load_config(
 #             config_file=config_file, config_overrides=config_overrides
 #         )
 
-#         # set default shape colors
 #         Shape.line_color = QtGui.QColor(*self._config["shape"]["line_color"])
 #         Shape.fill_color = QtGui.QColor(*self._config["shape"]["fill_color"])
-#         Shape.select_line_color = QtGui.QColor(
-#             *self._config["shape"]["select_line_color"]
-#         )
-#         Shape.select_fill_color = QtGui.QColor(
-#             *self._config["shape"]["select_fill_color"]
-#         )
-#         Shape.vertex_fill_color = QtGui.QColor(
-#             *self._config["shape"]["vertex_fill_color"]
-#         )
-#         Shape.hvertex_fill_color = QtGui.QColor(
-#             *self._config["shape"]["hvertex_fill_color"]
-#         )
-
-#         # Set point size from config file
+#         Shape.select_line_color = QtGui.QColor(*self._config["shape"]["select_line_color"])
+#         Shape.select_fill_color = QtGui.QColor(*self._config["shape"]["select_fill_color"])
+#         Shape.vertex_fill_color = QtGui.QColor(*self._config["shape"]["vertex_fill_color"])
+#         Shape.hvertex_fill_color = QtGui.QColor(*self._config["shape"]["hvertex_fill_color"])
 #         Shape.point_size = self._config["shape"]["point_size"]
 
 #         self._copied_shapes = []
@@ -253,7 +237,6 @@
 
 #         self.setAcceptDrops(True)
 #         self._canvas_widgets = self._setup_canvas()
-#         self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list) #attiva la selezione delle linee automatiche
 #         self._actions = self._setup_actions()
 #         self._scalers = {
 #             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -275,15 +258,10 @@
 #         self._ai_text.setEnabled(False)
 
 #         self._setup_toolbars()
-
 #         self._status_bar = self._setup_status_bar()
-
 #         self._setup_app_state(output_dir=output_dir, filename=filename)
-
 #         self.updateFileMenu()
-
 #         self._canvas_widgets.zoom_widget.valueChanged.connect(self._paint_canvas)
-
 #         self.populateModeActions()
 
 #     def _setup_actions(self) -> _Actions:
@@ -292,397 +270,154 @@
 
 #         about = action(
 #             text=f"&About {__appname__}",
-#             slot=functools.partial(
-#                 QMessageBox.about,
-#                 self,
-#                 f"About {__appname__}",
-#                 f"""
-# <h3>{__appname__}</h3>
-# <p>Image Polygonal Annotation with Python</p>
-# <p>Version: {__version__}</p>
-# <p>Author: Kentaro Wada</p>
-# <p>
-#     <a href="https://labelme.io">Homepage</a> |
-#     <a href="https://labelme.io/docs">Documentation</a> |
-#     <a href="https://labelme.io/docs/troubleshoot">Troubleshooting</a>
-# </p>
-# <p>
-#     <a href="https://github.com/wkentaro/labelme">GitHub</a> |
-#     <a href="https://x.com/labelmeai">Twitter/X</a>
-# </p>
-# """,
-#             ),
+#             slot=functools.partial(QMessageBox.about, self, f"About {__appname__}", "Deep VP Editor"),
 #         )
 #         save = action(
-#             text=self.tr("&Save\n"),
-#             slot=self.saveFile,
-#             shortcut=shortcuts["save"],
-#             icon="floppy-disk.svg",
-#             tip=self.tr("Save labels to file"),
-#             enabled=False,
+#             text=self.tr("&Save\n"), slot=self.saveFile, shortcut=shortcuts["save"], icon="floppy-disk.svg", tip=self.tr("Save labels to file"), enabled=False,
 #         )
 #         save_as = action(
-#             text=self.tr("&Save As"),
-#             slot=self.saveFileAs,
-#             shortcut=shortcuts["save_as"],
-#             icon="floppy-disk.svg",
-#             tip=self.tr("Save labels to a different file"),
-#             enabled=False,
+#             text=self.tr("&Save As"), slot=self.saveFileAs, shortcut=shortcuts["save_as"], icon="floppy-disk.svg", tip=self.tr("Save labels to a different file"), enabled=False,
 #         )
 #         save_auto = action(
-#             text=self.tr("Save &Automatically"),
-#             tip=self.tr("Save automatically"),
-#             checkable=True,
-#             enabled=True,
+#             text=self.tr("Save &Automatically"), tip=self.tr("Save automatically"), checkable=True, enabled=True,
 #         )
 #         save_auto.setChecked(self._config["auto_save"])
 #         save_with_image_data = action(
-#             text=self.tr("Save With Image Data"),
-#             slot=self.enableSaveImageWithData,
-#             tip=self.tr("Save image data in label file"),
-#             checkable=True,
-#             checked=self._config["with_image_data"],
+#             text=self.tr("Save With Image Data"), slot=self.enableSaveImageWithData, tip=self.tr("Save image data in label file"), checkable=True, checked=self._config["with_image_data"],
 #         )
 #         change_output_dir = action(
-#             text=self.tr("&Change Output Dir"),
-#             slot=self.changeOutputDirDialog,
-#             shortcut=shortcuts["save_to"],
-#             icon="folders.svg",
-#             tip=self.tr("Change where annotations are loaded/saved"),
+#             text=self.tr("&Change Output Dir"), slot=self.changeOutputDirDialog, shortcut=shortcuts["save_to"], icon="folders.svg", tip=self.tr("Change where annotations are loaded/saved"),
 #         )
 #         open_ = action(
-#             text=self.tr("&Open\n"),
-#             slot=self._open_file_with_dialog,
-#             shortcut=shortcuts["open"],
-#             icon="folder-open.svg",
-#             tip=self.tr("Open image or label file"),
+#             text=self.tr("&Open\n"), slot=self._open_file_with_dialog, shortcut=shortcuts["open"], icon="folder-open.svg", tip=self.tr("Open image or label file"),
 #         )
 #         open_dir = action(
-#             text=self.tr("Open Dir"),
-#             slot=self._open_dir_with_dialog,
-#             shortcut=shortcuts["open_dir"],
-#             icon="folder-open.svg",
-#             tip=self.tr("Open Dir"),
+#             text=self.tr("Open Dir"), slot=self._open_dir_with_dialog, shortcut=shortcuts["open_dir"], icon="folder-open.svg", tip=self.tr("Open Dir"),
 #         )
 #         close = action(
-#             text=self.tr("&Close"),
-#             slot=self.closeFile,
-#             shortcut=shortcuts["close"],
-#             icon="x-circle.svg",
-#             tip=self.tr("Close current file"),
+#             text=self.tr("&Close"), slot=self.closeFile, shortcut=shortcuts["close"], icon="x-circle.svg", tip=self.tr("Close current file"),
 #         )
 #         delete_file = action(
-#             text=self.tr("&Delete File"),
-#             slot=self.deleteFile,
-#             shortcut=shortcuts["delete_file"],
-#             icon="file-x.svg",
-#             tip=self.tr("Delete current label file"),
-#             enabled=False,
+#             text=self.tr("&Delete File"), slot=self.deleteFile, shortcut=shortcuts["delete_file"], icon="file-x.svg", tip=self.tr("Delete current label file"), enabled=False,
 #         )
 #         toggle_keep_prev_mode = action(
-#             text=self.tr("Keep Previous Annotation"),
-#             slot=self.toggleKeepPrevMode,
-#             shortcut=shortcuts["toggle_keep_prev_mode"],
-#             icon=None,
-#             tip=self.tr('Toggle "keep previous annotation" mode'),
-#             checkable=True,
+#             text=self.tr("Keep Previous Annotation"), slot=self.toggleKeepPrevMode, shortcut=shortcuts["toggle_keep_prev_mode"], icon=None, tip=self.tr('Toggle "keep previous annotation" mode'), checkable=True,
 #         )
 #         toggle_keep_prev_mode.setChecked(self._config["keep_prev"])
 #         toggle_keep_prev_brightness_contrast = action(
 #             text=self.tr("Keep Previous Brightness/Contrast"),
-#             slot=lambda: self._config.__setitem__(
-#                 "keep_prev_brightness_contrast",
-#                 not self._config["keep_prev_brightness_contrast"],
-#             ),
-#             checkable=True,
-#             checked=self._config["keep_prev_brightness_contrast"],
+#             slot=lambda: self._config.__setitem__("keep_prev_brightness_contrast", not self._config["keep_prev_brightness_contrast"]),
+#             checkable=True, checked=self._config["keep_prev_brightness_contrast"],
 #         )
 #         delete = action(
-#             self.tr("Delete Shapes"),
-#             self.deleteSelectedShape,
-#             shortcuts["delete_shape"],
-#             icon="trash.svg",
-#             tip=self.tr("Delete the selected shapes"),
-#             enabled=False,
+#             self.tr("Delete Shapes"), self.deleteSelectedShape, shortcuts["delete_shape"], icon="trash.svg", tip=self.tr("Delete the selected shapes"), enabled=False,
 #         )
 #         edit = action(
-#             self.tr("&Edit Label"),
-#             self._edit_label,
-#             shortcuts["edit_label"],
-#             icon="note-pencil.svg",
-#             tip=self.tr("Modify the label of the selected shape"),
-#             enabled=False,
+#             self.tr("&Edit Label"), self._edit_label, shortcuts["edit_label"], icon="note-pencil.svg", tip=self.tr("Modify the label of the selected shape"), enabled=False,
 #         )
 #         duplicate = action(
-#             self.tr("Duplicate Shapes"),
-#             self.duplicateSelectedShape,
-#             shortcuts["duplicate_shape"],
-#             icon="copy.svg",
-#             tip=self.tr("Create a duplicate of the selected shapes"),
-#             enabled=False,
+#             self.tr("Duplicate Shapes"), self.duplicateSelectedShape, shortcuts["duplicate_shape"], icon="copy.svg", tip=self.tr("Create a duplicate of the selected shapes"), enabled=False,
 #         )
 #         copy = action(
-#             self.tr("Copy Shapes"),
-#             self.copySelectedShape,
-#             shortcuts["copy_shape"],
-#             "copy_clipboard",
-#             self.tr("Copy selected shapes to clipboard"),
-#             enabled=False,
+#             self.tr("Copy Shapes"), self.copySelectedShape, shortcuts["copy_shape"], "copy_clipboard", self.tr("Copy selected shapes to clipboard"), enabled=False,
 #         )
 #         paste = action(
-#             self.tr("Paste Shapes"),
-#             self.pasteSelectedShape,
-#             shortcuts["paste_shape"],
-#             "paste",
-#             self.tr("Paste copied shapes"),
-#             enabled=False,
+#             self.tr("Paste Shapes"), self.pasteSelectedShape, shortcuts["paste_shape"], "paste", self.tr("Paste copied shapes"), enabled=False,
 #         )
 #         undo_last_point = action(
-#             self.tr("Undo last point"),
-#             self._canvas_widgets.canvas.undoLastPoint,
-#             shortcuts["undo_last_point"],
-#             icon="arrow-u-up-left.svg",
-#             tip=self.tr("Undo last drawn point"),
-#             enabled=False,
+#             self.tr("Undo last point"), self._canvas_widgets.canvas.undoLastPoint, shortcuts["undo_last_point"], icon="arrow-u-up-left.svg", tip=self.tr("Undo last drawn point"), enabled=False,
 #         )
 #         undo = action(
-#             self.tr("Undo\n"),
-#             self.undoShapeEdit,
-#             shortcuts["undo"],
-#             icon="arrow-u-up-left.svg",
-#             tip=self.tr("Undo last add and edit of shape"),
-#             enabled=False,
+#             self.tr("Undo\n"), self.undoShapeEdit, shortcuts["undo"], icon="arrow-u-up-left.svg", tip=self.tr("Undo last add and edit of shape"), enabled=False,
 #         )
 #         remove_point = action(
-#             text=self.tr("Remove Selected Point"),
-#             slot=self.removeSelectedPoint,
-#             shortcut=shortcuts["remove_selected_point"],
-#             icon="trash.svg",
-#             tip=self.tr("Remove selected point from polygon"),
-#             enabled=False,
+#             text=self.tr("Remove Selected Point"), slot=self.removeSelectedPoint, shortcut=shortcuts["remove_selected_point"], icon="trash.svg", tip=self.tr("Remove selected point from polygon"), enabled=False,
 #         )
 #         create_mode = action(
-#             text=self.tr("Create Polygons"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="polygon"),
-#             shortcut=shortcuts["create_polygon"],
-#             icon="polygon.svg",
-#             tip=self.tr("Start drawing polygons"),
-#             enabled=False,
+#             text=self.tr("Create Polygons"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="polygon"), shortcut=shortcuts["create_polygon"], icon="polygon.svg", tip=self.tr("Start drawing polygons"), enabled=False,
 #         )
 #         edit_mode = action(
-#             self.tr("Edit Shapes"),
-#             lambda: self._switch_canvas_mode(edit=True),
-#             shortcuts["edit_shape"],
-#             icon="note-pencil.svg",
-#             tip=self.tr("Move and edit the selected shapes"),
-#             enabled=False,
+#             self.tr("Edit Shapes"), lambda: self._switch_canvas_mode(edit=True), shortcuts["edit_shape"], icon="note-pencil.svg", tip=self.tr("Move and edit the selected shapes"), enabled=False,
 #         )
 #         create_rectangle_mode = action(
-#             text=self.tr("Create Rectangle"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="rectangle"),
-#             shortcut=shortcuts["create_rectangle"],
-#             icon="rectangle.svg",
-#             tip=self.tr("Start drawing rectangles"),
-#             enabled=False,
+#             text=self.tr("Create Rectangle"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="rectangle"), shortcut=shortcuts["create_rectangle"], icon="rectangle.svg", tip=self.tr("Start drawing rectangles"), enabled=False,
 #         )
 #         create_circle_mode = action(
-#             text=self.tr("Create Circle"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="circle"),
-#             shortcut=shortcuts["create_circle"],
-#             icon="circle.svg",
-#             tip=self.tr("Start drawing circles"),
-#             enabled=False,
+#             text=self.tr("Create Circle"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="circle"), shortcut=shortcuts["create_circle"], icon="circle.svg", tip=self.tr("Start drawing circles"), enabled=False,
 #         )
 #         create_line_mode = action(
-#             text=self.tr("Create Line"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="line"),
-#             shortcut=shortcuts["create_line"],
-#             icon="line-segment.svg",
-#             tip=self.tr("Start drawing lines"),
-#             enabled=False,
+#             text=self.tr("Create Line"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="line"), shortcut=shortcuts["create_line"], icon="line-segment.svg", tip=self.tr("Start drawing lines"), enabled=False,
 #         )
 #         create_point_mode = action(
-#             text=self.tr("Create Point"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="point"),
-#             shortcut=shortcuts["create_point"],
-#             icon="circles-four.svg",
-#             tip=self.tr("Start drawing points"),
-#             enabled=False,
+#             text=self.tr("Create Point"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="point"), shortcut=shortcuts["create_point"], icon="circles-four.svg", tip=self.tr("Start drawing points"), enabled=False,
 #         )
 #         create_line_strip_mode = action(
-#             text=self.tr("Create LineStrip"),
-#             slot=lambda: self._switch_canvas_mode(edit=False, createMode="linestrip"),
-#             shortcut=shortcuts["create_linestrip"],
-#             icon="line-segments.svg",
-#             tip=self.tr("Start drawing linestrip. Ctrl+LeftClick ends creation."),
-#             enabled=False,
+#             text=self.tr("Create LineStrip"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="linestrip"), shortcut=shortcuts["create_linestrip"], icon="line-segments.svg", tip=self.tr("Start drawing linestrip. Ctrl+LeftClick ends creation."), enabled=False,
 #         )
 #         create_ai_polygon_mode = action(
-#             self.tr("Create AI-Polygon"),
-#             lambda: self._switch_canvas_mode(edit=False, createMode="ai_polygon"),
-#             None,
-#             "ai-polygon.svg",
-#             self.tr("Start drawing ai_polygon. Ctrl+LeftClick ends creation."),
-#             enabled=False,
+#             self.tr("Create AI-Polygon"), lambda: self._switch_canvas_mode(edit=False, createMode="ai_polygon"), None, "ai-polygon.svg", self.tr("Start drawing ai_polygon. Ctrl+LeftClick ends creation."), enabled=False,
 #         )
 #         create_ai_mask_mode = action(
-#             self.tr("Create AI-Mask"),
-#             lambda: self._switch_canvas_mode(edit=False, createMode="ai_mask"),
-#             None,
-#             "ai-mask.svg",
-#             self.tr("Start drawing ai_mask. Ctrl+LeftClick ends creation."),
-#             enabled=False,
+#             self.tr("Create AI-Mask"), lambda: self._switch_canvas_mode(edit=False, createMode="ai_mask"), None, "ai-mask.svg", self.tr("Start drawing ai_mask. Ctrl+LeftClick ends creation."), enabled=False,
 #         )
-#         # --- YOUR CUSTOM ACTION ---
+        
+#         # --- RESEARCH ACTIONS ---
 #         actionAutoDetect = action(
-#             text=self.tr("Auto-Detect Linee"),
-#             slot=self.auto_detect_lines, # Ensure you've defined this method in the class!
-#             shortcut="Ctrl+Shift+X",
-#             icon="magic.svg", # Using a default icon available in LabelMe
-#             tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
-#             enabled=False, # It starts disabled until an image is actually loaded
+#             text=self.tr("Auto-Detect Linee"), slot=self.auto_detect_lines, shortcut="Ctrl+Shift+X", icon="magic.svg", tip=self.tr("Rileva automaticamente le linee nella vista corrente"), enabled=False,
 #         )
-
 #         actionProjectlines = action(
-#             text=self.tr("Projections Lines"),
-#             slot=self.project_lines_preview, # Ensure you've defined this method in the class!
-#             shortcut="Ctrl+Shift+P",
-#             icon="Projection_and_rejection.svg", # Using a default icon available in LabelMe
-#             tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
-#             enabled=False, # It starts disabled until an image is actually loaded
+#             text=self.tr("Projections Lines"), slot=self.project_lines_preview, shortcut="Ctrl+Shift+P", icon="Projection_and_rejection.svg", tip=self.tr("Proietta le linee ai bordi dell'immagine"), enabled=False,
 #         )
-
 #         actionProjectlines2txt = action(
-#             text=self.tr("Save Projected Lines"),
-#             slot=self.export_segments_to_txt, # Ensure you've defined this method in the class!
-#             shortcut="Ctrl+Shift+K", 
-#             tip=self.tr("Salva le linee proiettate in txt"),
-#             enabled=False, # It starts disabled until an image is actually loaded
+#             text=self.tr("Save Projected Lines"), slot=self.export_segments_to_txt, shortcut="Ctrl+Shift+K", tip=self.tr("Salva le linee proiettate in txt"), enabled=False,
 #         )
-
 #         actionMergeLines = action(
-#             text = self.tr("Merge Lines"),
-#             slot = self.merge_parallel_lines,
-#             shortcut="Ctrl+Shift+M", 
-#             icon="merging.svg", # Using a default icon available in LabelMe
-#             tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
-#             enabled=False
+#             text = self.tr("Merge Lines"), slot = self.merge_parallel_lines, shortcut="Ctrl+Shift+M", icon="merging.svg", tip=self.tr("Fonde le linee parallele entro un certo epsilon"), enabled=False
 #         )
-#         ######################################################
         
 #         open_next_img = action(
-#             text=self.tr("&Next Image"),
-#             slot=self._open_next_image,
-#             shortcut=shortcuts["open_next"],
-#             icon="arrow-fat-right.svg",
-#             tip=self.tr("Open next (hold Ctl+Shift to copy labels)"),
-#             enabled=False,
+#             text=self.tr("&Next Image"), slot=self._open_next_image, shortcut=shortcuts["open_next"], icon="arrow-fat-right.svg", tip=self.tr("Open next"), enabled=False,
 #         )
 #         open_prev_img = action(
-#             text=self.tr("&Prev Image"),
-#             slot=self._open_prev_image,
-#             shortcut=shortcuts["open_prev"],
-#             icon="arrow-fat-left.svg",
-#             tip=self.tr("Open prev (hold Ctl+Shift to copy labels)"),
-#             enabled=False,
+#             text=self.tr("&Prev Image"), slot=self._open_prev_image, shortcut=shortcuts["open_prev"], icon="arrow-fat-left.svg", tip=self.tr("Open prev"), enabled=False,
 #         )
 #         keep_prev_scale = action(
-#             self.tr("&Keep Previous Scale"),
-#             self.enableKeepPrevScale,
-#             tip=self.tr("Keep previous zoom scale"),
-#             checkable=True,
-#             checked=self._config["keep_prev_scale"],
-#             enabled=True,
+#             self.tr("&Keep Previous Scale"), self.enableKeepPrevScale, tip=self.tr("Keep previous zoom scale"), checkable=True, checked=self._config["keep_prev_scale"], enabled=True,
 #         )
 #         fit_window = action(
-#             self.tr("&Fit Window"),
-#             self.setFitWindow,
-#             shortcuts["fit_window"],
-#             icon="frame-corners.svg",
-#             tip=self.tr("Zoom follows window size"),
-#             checkable=True,
-#             enabled=False,
+#             self.tr("&Fit Window"), self.setFitWindow, shortcuts["fit_window"], icon="frame-corners.svg", tip=self.tr("Zoom follows window size"), checkable=True, enabled=False,
 #         )
 #         fit_width = action(
-#             self.tr("Fit &Width"),
-#             self.setFitWidth,
-#             shortcuts["fit_width"],
-#             icon="frame-arrows-horizontal.svg",
-#             tip=self.tr("Zoom follows window width"),
-#             checkable=True,
-#             enabled=False,
+#             self.tr("Fit &Width"), self.setFitWidth, shortcuts["fit_width"], icon="frame-arrows-horizontal.svg", tip=self.tr("Zoom follows window width"), checkable=True, enabled=False,
 #         )
 #         brightness_contrast = action(
-#             self.tr("&Brightness Contrast"),
-#             self.brightnessContrast,
-#             None,
-#             "brightness-contrast.svg",
-#             self.tr("Adjust brightness and contrast"),
-#             enabled=False,
+#             self.tr("&Brightness Contrast"), self.brightnessContrast, None, "brightness-contrast.svg", self.tr("Adjust brightness and contrast"), enabled=False,
 #         )
 #         zoom_in = action(
-#             self.tr("Zoom &In"),
-#             lambda _: self._add_zoom(increment=1.1),
-#             shortcuts["zoom_in"],
-#             icon="magnifying-glass-minus.svg",
-#             tip=self.tr("Increase zoom level"),
-#             enabled=False,
+#             self.tr("Zoom &In"), lambda _: self._add_zoom(increment=1.1), shortcuts["zoom_in"], icon="magnifying-glass-minus.svg", tip=self.tr("Increase zoom level"), enabled=False,
 #         )
 #         zoom_out = action(
-#             self.tr("&Zoom Out"),
-#             lambda _: self._add_zoom(increment=0.9),
-#             shortcuts["zoom_out"],
-#             icon="magnifying-glass-plus.svg",
-#             tip=self.tr("Decrease zoom level"),
-#             enabled=False,
+#             self.tr("&Zoom Out"), lambda _: self._add_zoom(increment=0.9), shortcuts["zoom_out"], icon="magnifying-glass-plus.svg", tip=self.tr("Decrease zoom level"), enabled=False,
 #         )
 #         zoom_org = action(
-#             self.tr("&Original size"),
-#             self._set_zoom_to_original,
-#             shortcuts["zoom_to_original"],
-#             icon="image-square.svg",
-#             tip=self.tr("Zoom to original size"),
-#             enabled=False,
+#             self.tr("&Original size"), self._set_zoom_to_original, shortcuts["zoom_to_original"], icon="image-square.svg", tip=self.tr("Zoom to original size"), enabled=False,
 #         )
 #         reset_layout = action(
-#             text=self.tr("Reset Layout"),
-#             slot=self._reset_layout,
-#             icon="layout-duotone.svg",
+#             text=self.tr("Reset Layout"), slot=self._reset_layout, icon="layout-duotone.svg",
 #         )
 #         fill_drawing = action(
-#             self.tr("Fill Drawing Polygon"),
-#             self._canvas_widgets.canvas.setFillDrawing,
-#             None,
-#             icon="paint-bucket.svg",
-#             tip=self.tr("Fill polygon while drawing"),
-#             checkable=True,
-#             enabled=True,
+#             self.tr("Fill Drawing Polygon"), self._canvas_widgets.canvas.setFillDrawing, None, icon="paint-bucket.svg", tip=self.tr("Fill polygon while drawing"), checkable=True, enabled=True,
 #         )
 #         if self._config["canvas"]["fill_drawing"]:
 #             fill_drawing.trigger()
 #         hide_all = action(
-#             self.tr("&Hide\nShapes"),
-#             functools.partial(self.toggleShapes, False),
-#             shortcuts["hide_all_shapes"],
-#             icon="eye.svg",
-#             tip=self.tr("Hide all shapes"),
-#             enabled=False,
+#             self.tr("&Hide\nShapes"), functools.partial(self.toggleShapes, False), shortcuts["hide_all_shapes"], icon="eye.svg", tip=self.tr("Hide all shapes"), enabled=False,
 #         )
 #         show_all = action(
-#             self.tr("&Show\nShapes"),
-#             functools.partial(self.toggleShapes, True),
-#             shortcuts["show_all_shapes"],
-#             icon="eye.svg",
-#             tip=self.tr("Show all shapes"),
-#             enabled=False,
+#             self.tr("&Show\nShapes"), functools.partial(self.toggleShapes, True), shortcuts["show_all_shapes"], icon="eye.svg", tip=self.tr("Show all shapes"), enabled=False,
 #         )
 #         toggle_all = action(
-#             self.tr("&Toggle\nShapes"),
-#             functools.partial(self.toggleShapes, None),
-#             shortcuts["toggle_all_shapes"],
-#             icon="eye.svg",
-#             tip=self.tr("Toggle all shapes"),
-#             enabled=False,
+#             self.tr("&Toggle\nShapes"), functools.partial(self.toggleShapes, None), shortcuts["toggle_all_shapes"], icon="eye.svg", tip=self.tr("Toggle all shapes"), enabled=False,
 #         )
 
 #         zoom_widget_action = QtWidgets.QWidgetAction(self)
@@ -694,15 +429,7 @@
 #         zoom_widget_action.setDefaultWidget(QtWidgets.QWidget())
 #         zoom_widget_action.defaultWidget().setLayout(zoom_box_layout)
 #         self._canvas_widgets.zoom_widget.setWhatsThis(
-#             str(
-#                 self.tr(
-#                     "Zoom in or out of the image. Also accessible with "
-#                     "{} and {} from the canvas."
-#                 )
-#             ).format(
-#                 utils.fmtShortcut(f"{shortcuts['zoom_in']},{shortcuts['zoom_out']}"),
-#                 utils.fmtShortcut(self.tr("Ctrl+Wheel")),
-#             )
+#             str(self.tr("Zoom in or out of the image.")).format(utils.fmtShortcut(f"{shortcuts['zoom_in']},{shortcuts['zoom_out']}"), utils.fmtShortcut(self.tr("Ctrl+Wheel")))
 #         )
 #         self._canvas_widgets.zoom_widget.setEnabled(False)
 
@@ -725,253 +452,40 @@
 #             ("Save Projected Lines", actionProjectlines2txt),
 #             ("Merge Lines", actionMergeLines)
 #         ]
-#         zoom = (
-#             self._canvas_widgets.zoom_widget,
-#             zoom_in,
-#             zoom_out,
-#             zoom_org,
-#             fit_window,
-#             fit_width,
-#         )
-#         on_load_active = (
-#             close,
-#             create_mode,
-#             create_rectangle_mode,
-#             create_circle_mode,
-#             create_line_mode,
-#             create_point_mode,
-#             create_line_strip_mode,
-#             create_ai_polygon_mode,
-#             create_ai_mask_mode,
-#             brightness_contrast,
-#             actionAutoDetect,
-#             actionProjectlines,
-#             actionProjectlines2txt,
-#             actionMergeLines,
-#         )
+#         zoom = (self._canvas_widgets.zoom_widget, zoom_in, zoom_out, zoom_org, fit_window, fit_width)
+#         on_load_active = (close, create_mode, create_rectangle_mode, create_circle_mode, create_line_mode, create_point_mode, create_line_strip_mode, create_ai_polygon_mode, create_ai_mask_mode, brightness_contrast, actionAutoDetect, actionProjectlines, actionProjectlines2txt, actionMergeLines)
 #         on_shapes_present = (save_as, hide_all, show_all, toggle_all)
-#         context_menu = (
-#             *[draw_action for _, draw_action in draw],
-#             actionAutoDetect,
-#             actionProjectlines,
-#             actionProjectlines2txt,
-#             actionMergeLines,
-#             edit_mode,
-#             edit,
-#             duplicate,
-#             copy,
-#             paste,
-#             delete,
-#             undo,
-#             undo_last_point,
-#             remove_point,
-#         )
-#         edit_menu = (
-#             edit,
-#             duplicate,
-#             copy,
-#             paste,
-#             delete,
-#             None,
-#             undo,
-#             undo_last_point,
-#             None,
-#             remove_point,
-#             None,
-#             toggle_keep_prev_mode,
-#         )
-    
+#         context_menu = (*[draw_action for _, draw_action in draw], actionAutoDetect, actionProjectlines, actionProjectlines2txt, actionMergeLines, edit_mode, edit, duplicate, copy, paste, delete, undo, undo_last_point, remove_point)
+#         edit_menu = (edit, duplicate, copy, paste, delete, None, undo, undo_last_point, None, remove_point, None, toggle_keep_prev_mode)
 
-        
 #         return _Actions(
-#             about=about,
-#             save=save,
-#             save_as=save_as,
-#             save_auto=save_auto,
-#             save_with_image_data=save_with_image_data,
-#             change_output_dir=change_output_dir,
-#             open=open_,
-#             close=close,
-#             delete_file=delete_file,
-#             toggle_keep_prev_mode=toggle_keep_prev_mode,
-#             toggle_keep_prev_brightness_contrast=toggle_keep_prev_brightness_contrast,
-#             delete=delete,
-#             edit=edit,
-#             duplicate=duplicate,
-#             copy=copy,
-#             paste=paste,
-#             undo_last_point=undo_last_point,
-#             undo=undo,
-#             remove_point=remove_point,
-#             create_mode=create_mode,
-#             edit_mode=edit_mode,
-#             create_rectangle_mode=create_rectangle_mode,
-#             create_circle_mode=create_circle_mode,
-#             create_line_mode=create_line_mode,
-#             create_point_mode=create_point_mode,
-#             create_line_strip_mode=create_line_strip_mode,
-#             create_ai_polygon_mode=create_ai_polygon_mode,
-#             create_ai_mask_mode=create_ai_mask_mode,
-#             open_next_img=open_next_img,
-#             open_prev_img=open_prev_img,
-#             keep_prev_scale=keep_prev_scale,
-#             fit_window=fit_window,
-#             fit_width=fit_width,
-#             brightness_contrast=brightness_contrast,
-#             zoom_in=zoom_in,
-#             zoom_out=zoom_out,
-#             zoom_org=zoom_org,
-#             reset_layout=reset_layout,
-#             fill_drawing=fill_drawing,
-#             hide_all=hide_all,
-#             show_all=show_all,
-#             toggle_all=toggle_all,
-#             open_dir=open_dir,
-#             zoom_widget_action=zoom_widget_action,
-#             draw=draw,
-#             zoom=zoom,
-#             on_load_active=on_load_active,
-#             on_shapes_present=on_shapes_present,
-#             context_menu=context_menu,
-#             edit_menu=edit_menu,
+#             about=about, save=save, save_as=save_as, save_auto=save_auto, save_with_image_data=save_with_image_data, change_output_dir=change_output_dir,
+#             open=open_, close=close, delete_file=delete_file, toggle_keep_prev_mode=toggle_keep_prev_mode, toggle_keep_prev_brightness_contrast=toggle_keep_prev_brightness_contrast,
+#             delete=delete, edit=edit, duplicate=duplicate, copy=copy, paste=paste, undo_last_point=undo_last_point, undo=undo, remove_point=remove_point,
+#             create_mode=create_mode, edit_mode=edit_mode, create_rectangle_mode=create_rectangle_mode, create_circle_mode=create_circle_mode, create_line_mode=create_line_mode,
+#             create_point_mode=create_point_mode, create_line_strip_mode=create_line_strip_mode, create_ai_polygon_mode=create_ai_polygon_mode, create_ai_mask_mode=create_ai_mask_mode,
+#             open_next_img=open_next_img, open_prev_img=open_prev_img, keep_prev_scale=keep_prev_scale, fit_window=fit_window, fit_width=fit_width, brightness_contrast=brightness_contrast,
+#             zoom_in=zoom_in, zoom_out=zoom_out, zoom_org=zoom_org, reset_layout=reset_layout, fill_drawing=fill_drawing, hide_all=hide_all, show_all=show_all, toggle_all=toggle_all,
+#             open_dir=open_dir, zoom_widget_action=zoom_widget_action, draw=draw, zoom=zoom, on_load_active=on_load_active, on_shapes_present=on_shapes_present,
+#             context_menu=context_menu, edit_menu=edit_menu,
 #         )
-#     # def auto_detect_lines(self):
-#     #     """Estrae i segmenti LSD leggendo l'immagine dal disco (ricerca dinamica del path)."""
-#     #     import math
-#     #     import os
-#     #     import numpy as np
-#     #     import cv2
-#     #     from qtpy import QtCore
-#     #     from labelme.shape import Shape
-        
-#     #     print("DEBUG: Avvio auto-detect...") 
 
-#     #     # 1. Cacciatore di variabili: cerchiamo in tutti i nomi usati storicamente da LabelMe
-#     #     file_path = None
-#     #     possibili_variabili = [
-#     #         'imagePath', 'image_path', '_image_path', 
-#     #         'filename', '_filename', 'filePath', '_image_file'
-#     #     ]
-        
-#     #     for var_name in possibili_variabili:
-#     #         val = getattr(self, var_name, None)
-#     #         # Se la variabile è una stringa e corrisponde a un file reale sul disco
-#     #         if isinstance(val, str) and os.path.exists(val):
-#     #             file_path = val
-#     #             print(f"DEBUG: Percorso trovato nella variabile 'self.{var_name}': {file_path}")
-#     #             break
-
-#     #     if not file_path:
-#     #         print("DEBUG: Impossibile trovare il file fisico in nessuna variabile nota.")
-#     #         self.statusBar().showMessage("Errore: Percorso file non trovato in memoria.")
-#     #         return
-            
-#     #     print(f"DEBUG: Lettura OpenCV dal disco confermata.")
-
-#     #     # 2. Lettura robusta (Windows-safe) e decodifica
-#     #     img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
-        
-#     #     if img_arr is None:
-#     #         print("DEBUG: Fallimento decodifica immagine da OpenCV.")
-#     #         return
-
-#     #     gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
-        
-#     #     # 3. Rilevamento LSD
-#     #     lsd = cv2.createLineSegmentDetector(0)
-#     #     lines = lsd.detect(gray)[0]
-        
-#     #     if lines is None:
-#     #         print("DEBUG: Nessun segmento rilevato.")
-#     #         return
-            
-#     #     # 4. Filtraggio euclideo per rimuovere il rumore
-#     #     min_length = 30.0 
-#     #     filtered_lines = []
-#     #     for line in lines:
-#     #         x1, y1, x2, y2 = line[0]
-#     #         length = math.hypot(x2 - x1, y2 - y1)
-#     #         if length >= min_length:
-#     #             filtered_lines.append((length, line[0]))
-                
-#     #     # 5. Protezione interfaccia PyQt5
-#     #     max_gui_lines = 800
-#     #     if len(filtered_lines) > max_gui_lines:
-#     #         filtered_lines.sort(key=lambda x: x[0], reverse=True)
-#     #         filtered_lines = filtered_lines[:max_gui_lines]
-
-#     #     # 6. Iniezione nel Canvas (Adattato alla nuova architettura)
-#     #     # Puntiamo alla nuova variabile che contiene il canvas
-#     #     target_canvas = self._canvas_widgets.canvas
-        
-#     #     target_canvas.deSelectShape()
-        
-#     #     for length, line_coords in filtered_lines:
-#     #         x1, y1, x2, y2 = line_coords
-#     #         # shape = Shape(label="Linea", shape_type="line")
-#     #         shape = Shape(label="Linea", shape_type="polygon") # cambiamo shape_type da "line" a "polygon". Un polygin può avere un numero variabile di punti (da 2 a infiniti).
-#     #         shape.addPoint(QtCore.QPointF(x1, y1))
-#     #         shape.addPoint(QtCore.QPointF(x2, y2))
-           
-
-#     #         # --- ATTRIBUTI FONDAMENTALI PER IL SALVATAGGIO JSON ---
-#     #         shape.group_id = None
-#     #         shape.description = ""
-#     #         shape.flags = {}
-#     #         # ------------------------------------------------------
-#     #         shape.close() 
-#     #         # Aggiunge al canvas
-#     #         target_canvas.shapes.append(shape)
-            
-#     #         # Aggiunge alla lista laterale (con un controllo di sicurezza 
-#     #         # nel caso anche labelList sia stata incapsulata)
-#     #         # Usa il metodo nativo della finestra per registrare l'annotazione
-#     #         if hasattr(self, 'addLabel'):
-#     #             self.addLabel(shape)
-#     #         elif hasattr(self, 'labelList'):
-#     #             self.labelList.addShape(shape)
-        
-#     #     # --- SINCRONIZZAZIONE STATO INTERNO ---
-#     #     # FONDAMENTALE: Salva le forme nel sistema Undo/Redo per evitare IndexError
-#     #     if hasattr(target_canvas, 'storeShapes'):
-#     #         target_canvas.storeShapes()       
-            
-#     #     target_canvas.update()
-#     #     self.setDirty() 
-#     #     msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
-#     #     self.statusBar().showMessage(msg)
-#     #     print(f"DEBUG: {msg}")
-        
 #     def get_next_label(self, prefix="L_"):
 #         """Trova il numero più alto tra le etichette esistenti e suggerisce il successivo."""
 #         max_id = -1
 #         target_canvas = self._canvas_widgets.canvas
-        
-#         # Scansiona tutte le forme già presenti per trovare l'indice massimo
 #         for shape in target_canvas.shapes:
 #             if shape.label and shape.label.startswith(prefix):
 #                 try:
-#                     # Estrae la parte numerica (es. da "L_005" prende "005")
-#                     num_str = shape.label.replace(prefix, "")
-#                     num = int(num_str)
+#                     num = int(shape.label.replace(prefix, ""))
 #                     if num > max_id:
 #                         max_id = num
 #                 except ValueError:
 #                     continue
-        
-#         # Restituisce il prossimo ID formattato con tre cifre (es. L_011)
 #         return f"{prefix}{max_id + 1:03d}"
 
-
-
-        
 #     def auto_detect_lines(self):
 #         """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
-        
-        
-#         print("DEBUG: Avvio auto-detect con Snap...") 
-
-#         # 1. Ricerca del file path (Invariato)
 #         file_path = None
 #         possibili_variabili = ['imagePath', 'image_path', '_image_path', 'filename', '_filename', 'filePath', '_image_file']
 #         for var_name in possibili_variabili:
@@ -984,17 +498,14 @@
 #             self.statusBar().showMessage("Errore: Percorso file non trovato.")
 #             return
 
-#         # 2. Lettura e conversione (Invariato)
 #         img_arr = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), cv2.IMREAD_COLOR)
 #         if img_arr is None: return
 #         gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
         
-#         # 3. Rilevamento LSD
 #         lsd = cv2.createLineSegmentDetector(0)
 #         lines = lsd.detect(gray)[0]
 #         if lines is None: return
             
-#         # 4. Filtraggio e preparazione lista coordinate
 #         min_length = 30.0 
 #         raw_coords = []
 #         for line in lines:
@@ -1003,78 +514,41 @@
 #             if length >= min_length:
 #                 raw_coords.append([x1, y1, x2, y2])
         
-#         # --- [INIZIO LOGICA SNAP] ---
-#         # Uniamo gli estremi che sono molto vicini (Epsilon pixel)
-        
 #         snap_epsilon = 5.0 
 #         for i in range(len(raw_coords)):
 #             for j in range(i + 1, len(raw_coords)):
-#                 # Indici degli estremi: P1=(0,1), P2=(2,3)
 #                 for idx_i in [(0,1), (2,3)]:
 #                     for idx_j in [(0,1), (2,3)]:
 #                         dist = math.hypot(raw_coords[i][idx_i[0]] - raw_coords[j][idx_j[0]], 
 #                                           raw_coords[i][idx_i[1]] - raw_coords[j][idx_j[1]])
 #                         if dist < snap_epsilon:
-#                             # Il punto del segmento j "salta" esattamente sulle coordinate del segmento i
 #                             raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
 #                             raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
                         
-#         #                 if dist < snap_epsilon:
-#         #                     # Eseguiamo lo Snap: il punto del segmento j 
-#         #                     # assume le coordinate esatte del segmento i
-#         #                     raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
-#         #                     raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
-#         # # --- [FINE LOGICA SNAP] ---
-
-#         # 5. Iniezione nel Canvas
-#         # target_canvas = self._canvas_widgets.canvas
-#         # target_canvas.deSelectShape()
-#             # 4. Iniezione nel Canvas e sincronizzazione LabelList
 #         target_canvas = self._canvas_widgets.canvas
-#         # target_canvas.shapes = [] # Pulisce per evitare sovrapposizioni
-            
-#         # --- FIX ATTRIBUTE ERROR: Svuota la lista usando il nome corretto ---
-#         # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-#         # if label_widget:
-#         #     label_widget.clear()
-        
-#         # Limite per performance GUI
 #         raw_coords = raw_coords[:800]
+
+#         # Blocchiamo i segnali per evitare loop di aggiornamento UI durate l'inserimento massivo
+#         self._docks.label_list.blockSignals(True)
 
 #         for idx, coords in enumerate(raw_coords):
 #             x1_raw, y1_raw, x2_raw, y2_raw = coords
-#             # --- CHIAMATA ALLO SNAP ---
-#             # Applichiamo la "calamita" sia al punto d'inizio che a quello di fine
 #             x1, y1 = self._apply_snap(x1_raw, y1_raw)
 #             x2, y2 = self._apply_snap(x2_raw, y2_raw)
-#             # --------------------------
             
-#             # 2. GENERAZIONE ETICHETTA UNICA (Richiamo funzione)
-#             # Questo garantisce che non ci siano conflitti nel file TXT/JSON
 #             unique_label = self.get_next_label(prefix="L_")
-                
 #             shape = Shape(label=unique_label, shape_type="polygon")
 #             shape.addPoint(QtCore.QPointF(x1, y1))
 #             shape.addPoint(QtCore.QPointF(x2, y2))
-
 #             shape.group_id = None
 #             shape.description = ""
 #             shape.flags = {}
 #             shape.close() 
 
 #             target_canvas.shapes.append(shape)
-            
-#             if hasattr(self, 'addLabel'):
-#                 self.addLabel(shape)
-#             elif hasattr(self, 'labelList'):
-#                 self.labelList.addShape(shape)
+#             self.addLabel(shape)
         
-#         # 6. Sincronizzazione Selezione (Punto 2 della tua richiesta)
-#         # Colleghiamo il segnale del canvas per evidenziare la riga corrispondente
-#         try:
-#             target_canvas.selectionChanged.connect(self.sync_selection_to_list)
-#         except:
-#             pass # Evita errori se già connesso
+#         self._docks.label_list.blockSignals(False)
 
 #         if hasattr(target_canvas, 'storeShapes'):
 #             target_canvas.storeShapes()       
@@ -1082,84 +556,8 @@
 #         target_canvas.update()
 #         self.setDirty() 
 #         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
+#         self._switch_canvas_mode(edit=True)
             
-#     def sync_selection_to_list(self):
-#         """Sincronizza click su linea e lista laterale senza crash."""
-#         try:
-#             canvas = self._canvas_widgets.canvas
-#             # Accesso diretto alla lista etichette
-#             label_list = getattr(self, 'labelList', None)
-            
-#             if not canvas.selectedShapes or label_list is None:
-#                 return
-
-#             shape = canvas.selectedShapes[-1]
-#             # Accediamo alla view interna della lista etichette
-#             label_list_widget = self._docks.label_list
-#             label_list_widget.clearSelection()
-        
-#             for i in range(label_list_widget.count()):
-#                 item = label_list_widget.item(i)
-#                 # LabelMe memorizza la shape nei dati dell'item (Qt.UserRole)
-#                 if item.data(QtCore.Qt.UserRole) == target_shape:
-#                     item.setSelected(True)
-#                     label_list_widget.scrollToItem(item)
-#                     break
-#         except Exception as e:
-#             # Chiudendo il blocco try con except, il SyntaxError sparisce
-#             print(f"Errore sincronizzazione: {e}")
-#     # def sync_selection_to_list(self):
-#     #     """Sincronizza il click sulla linea con la lista laterale."""
-#     #     canvas = self._canvas_widgets.canvas
-#     #     # Cerchiamo la vera QListWidget dentro il dock
-#     #     label_list_dock = self._docks.label_list
-        
-#     #     # In LabelMe, la vera lista QListWidget è accessibile così:
-#     #     inner_list = getattr(label_list_dock, 'labelList', None) or \
-#     #                  getattr(label_list_dock, 'list_widget', None) or \
-#     #                  label_list_dock # Fallback
-        
-#     #     if not canvas.selectedShapes or not hasattr(inner_list, 'count'):
-#     #         return
-
-#     #     shape = canvas.selectedShapes[-1]
-#     #     inner_list.clearSelection()
-        
-#     #     # Ora .count() funzionerà perché siamo sulla QListWidget corretta
-#     #     for i in range(inner_list.count()):
-#     #         item = inner_list.item(i)
-#     #         if getattr(item, 'shape', None) == shape:
-#     #             item.setSelected(True)
-#     #             inner_list.scrollToItem(item)
-#     #             break
-
-   
-        
-#     # def sync_selection_to_list(self):
-#     #     """Sincronizza il Canvas con la lista laterale (Annotation List)."""
-#     #     target_canvas = self._canvas_widgets.canvas
-#     #     label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        
-#     #     if not label_widget:
-#     #         return
-
-#     #     # Recuperiamo le forme selezionate sul canvas
-#     #     selected_shapes = target_canvas.selectedShapes[-1]
-        
-#     #     # Puliamo la selezione precedente nella lista
-#     #     label_widget.clearSelection()
-        
-#     #     if selected_shapes:
-#     #         # Prendiamo l'ultima forma cliccata
-#     #         shape = selected_shapes[-1]
-#     #         for i in range(label_widget.count()):
-#     #             item = label_widget.item(i)
-#     #             # Verifichiamo il riferimento alla shape
-#     #             if getattr(item, 'shape', None) == shape or item.data(QtCore.Qt.UserRole) == shape:
-#     #                 item.setSelected(True)
-#     #                 label_widget.scrollToItem(item)
-#     #                 break
-
 #     def _apply_snap(self, x, y, epsilon=10.0):
 #         """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
 #         target_canvas = self._canvas_widgets.canvas
@@ -1178,28 +576,20 @@
             
 #         img_w = target_canvas.pixmap.width()
 #         img_h = target_canvas.pixmap.height()
-        
-#         # Usiamo una lista temporanea per non modificare la lista mentre la cicliamo
 #         original_shapes = list(target_canvas.shapes)
 #         new_projected_shapes = []
 
 #         for shape in original_shapes:
-#             if len(shape.points) < 2:
-#                 continue
-            
-#             # Iteriamo SOLO sulle coppie di punti adiacenti originali
+#             if len(shape.points) < 2: continue
 #             for i in range(len(shape.points) - 1):
 #                 p1 = shape.points[i]
 #                 p2 = shape.points[i+1]
-                
 #                 x1, y1 = p1.x(), p1.y()
 #                 x2, y2 = p2.x(), p2.y()
 
 #                 dx, dy = x2 - x1, y2 - y1
-#                 if abs(dx) < 1e-6 and abs(dy) < 1e-6: 
-#                     continue
+#                 if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
 
-#                 # Calcolo geometrico della retta passante per i due punti consecutivi
 #                 t_candidates = []
 #                 if abs(dx) > 1e-10:
 #                     t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
@@ -1209,107 +599,58 @@
 #                 valid_pts = []
 #                 for t in t_candidates:
 #                     ix, iy = x1 + t * dx, y1 + t * dy
-#                     # Verifichiamo l'intersezione effettiva con il perimetro dell'immagine
 #                     if -0.5 <= ix <= img_w + 0.5 and -0.5 <= iy <= img_h + 0.5:
 #                         valid_pts.append((ix, iy))
                 
 #                 if len(valid_pts) >= 2:
-#                     # Troviamo i due punti di uscita dai bordi per quel segmento specifico
 #                     valid_pts.sort(key=lambda p: (p[0], p[1]))
 #                     ps, pe = valid_pts[0], valid_pts[-1]
-                    
-#                     # Creiamo la proiezione come entità separata
 #                     new_shape = Shape(label=shape.label, shape_type="line")
 #                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
 #                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
-                    
-#                     # Manteniamo i metadati per la ricerca
 #                     new_shape.group_id = shape.group_id
 #                     new_shape.close()
 #                     new_projected_shapes.append(new_shape)
 
-#         # SOSTITUZIONE: Rimuoviamo le polilinee "corte" e mettiamo i segmenti "lunghi"
-#         # Questo evita che ri-premendo il tasto si creino proiezioni incrociate
-#         target_canvas.shapes = new_projected_shapes
+#         self._docks.label_list.blockSignals(True)
+#         target_canvas.shapes = []
+#         if hasattr(self._docks, 'label_list'):
+#             self._docks.label_list.clear()
+            
+#         for s in new_projected_shapes:
+#             target_canvas.shapes.append(s)
+#             self.addLabel(s)
+            
+#         self._docks.label_list.blockSignals(False)
 #         target_canvas.update()
 #         self.setDirty() 
 #         self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
+#         self._switch_canvas_mode(edit=True)
 
-#     # def export_projected_to_txt(self):
-#     #     """Salva le linee attualmente visibili (estese) in formato TXT."""
-#     #     #1. SALVATAGGIO NATIVO (JSON)
-#     #     # Chiamiamo la funzione nativa di LabelMe per assicurarci che lo stato sia salvato
-#     #     try:
-#     #         self.saveFile()
-#     #     except Exception as e:
-#     #         print(f"Nota: Salvataggio JSON saltato o fallito: {e}") # Apre la finestra di salvataggio standard o salva se già impostato
-#     #     # 2. PREPARAZIONE DATI PER TXT
-#     #     lines_output = [] # Inizializzazione fondamentale per evitare NameError
-        
-#     #     try:
-#     #         # Recuperiamo le forme dal canvas
-#     #         canvas = self._canvas_widgets.canvas
-#     #         if not canvas or not hasattr(canvas, 'shapes'):
-#     #             self.statusBar().showMessage("Errore: Canvas non accessibile.")
-#     #             return
-
-#     #         for shape in canvas.shapes:
-#     #             if len(shape.points) >= 2:
-#     #                 p1 = shape.points[0]
-#     #                 p2 = shape.points[-1]
-#     #                 # Formato x1 y1 x2 y2 con 2 decimali
-#     #                 line_str = f"{p1.x():.2f} {p1.y():.2f} {p2.x():.2f} {p2.y():.2f}"
-#     #                 lines_output.append(line_str)
-
-#     #         if not lines_output:
-#     #             self.statusBar().showMessage("Nessuna linea valida da esportare.")
-#     #             return
-
-#     #         # 3. DIALOGO DI SALVATAGGIO
-#     #         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-#     #             self, "Esporta coordinate estese (TXT)", "", "TXT (*.txt)"
-#     #         )
-            
-#     #         if save_path:
-#     #             with open(save_path, 'w', encoding='utf-8') as f:
-#     #                 f.write("\n".join(lines_output))
-#     #             self.statusBar().showMessage(f"Esportate {len(lines_output)} linee in TXT.")
-            
-#     #     except Exception as e:
-#     #         # Messaggio di errore dettagliato per il debugging
-#     #         QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
-#     #         print(f"DEBUG ERROR: {e}")
 #     def export_segments_to_txt(self):
 #         """Salva JSON e TXT (x1, x2, y1, y2, H, W) in un colpo solo."""
 #         import os
-#         # Recupero dinamico del percorso file
 #         img_path = getattr(self, 'imagePath', None) or getattr(self, '_image_path', None)
 #         if not img_path:
-#             # Ultima spiaggia: recupero dal caricatore di file
 #             img_path = self.filename if hasattr(self, 'filename') else None
 
 #         if not img_path or not os.path.exists(img_path):
 #             self.statusBar().showMessage("Errore: Percorso immagine non trovato.")
 #             return
 
-#         # 1. SALVATAGGIO JSON (Metodo robusto)
 #         json_path = os.path.splitext(img_path)[0] + ".json"
 #         try:
-#             # Usiamo il metodo di salvataggio diretto delle labels
 #             self.saveLabels(json_path)
 #         except Exception as e:
 #             print(f"Errore salvataggio JSON: {e}")
 
-#         # 2. GENERAZIONE TXT
 #         canvas = self._canvas_widgets.canvas
 #         img_w, img_h = canvas.pixmap.width(), canvas.pixmap.height()
         
 #         lines_output = []
 #         for shape in canvas.shapes:
-#             # Scomponiamo ogni polilinea in segmenti reali
 #             for i in range(len(shape.points) - 1):
 #                 p1, p2 = shape.points[i], shape.points[i+1]
-#                 # Formato richiesto: x1, x2, y1, y2, H, W
 #                 lines_output.append(f"{p1.x():.2f}, {p2.x():.2f}, {p1.y():.2f}, {p2.y():.2f}, {img_h}, {img_w}")
 
 #         txt_path = os.path.splitext(img_path)[0] + ".txt"
@@ -1318,230 +659,9 @@
         
 #         self.setDirty()
 #         self.statusBar().showMessage(f"Dataset salvato: {len(lines_output)} segmenti.")      
-#     # def export_segments_to_txt(self):
-#     #     """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
-#     #     target_canvas = self._canvas_widgets.canvas
-#     #     if not target_canvas or not target_canvas.pixmap:
-#     #         self.statusBar().showMessage("Errore: Immagine non caricata.")
-#     #         return
-            
-#     #     # 1. Recupero dimensioni immagine (H, W)
-#     #     img_w = target_canvas.pixmap.width()
-#     #     img_h = target_canvas.pixmap.height()
-        
-#     #     lines_output = []
-
-#     #     try:
-#     #         for shape in target_canvas.shapes:
-#     #             num_points = len(shape.points)
-#     #             if num_points < 2:
-#     #                 continue
-
-#     #             # Gestione polilinee: salviamo ogni segmento consecutivo separatamente
-#     #             # Se è un poligono chiuso, colleghiamo l'ultimo al primo
-#     #             is_closed = shape.shape_type == "polygon" and getattr(shape, 'is_closed', True)
-#     #             range_limit = num_points if is_closed else num_points - 1
-
-#     #             for i in range(range_limit):
-#     #                 p1 = shape.points[i]
-#     #                 p2 = shape.points[(i + 1) % num_points]
-                    
-#     #                 # Coordinate reali (senza proiezioni ai bordi)
-#     #                 x1, y1 = p1.x(), p1.y()
-#     #                 x2, y2 = p2.x(), p2.y()
-
-#     #                 # 2. Formattazione richiesta: (x1, x2, y1, y2, altezza, larghezza)
-#     #                 # Usiamo i nomi delle variabili per chiarezza nel file o solo i numeri? 
-#     #                 # Qui metto il formato numerico pulito per il parsing della tua rete neurale:
-#     #                 line_str = f"{x1:.2f}, {x2:.2f}, {y1:.2f}, {y2:.2f}, {img_h}, {img_w}"
-#     #                 lines_output.append(line_str)
-
-#     #         if not lines_output:
-#     #             self.statusBar().showMessage("Nessun segmento da esportare.")
-#     #             return
-
-            
-#     #         # 3. Dialogo di salvataggio
-#     #         base_path = os.path.splitext(self.imagePath)[0] if hasattr(self, 'imagePath') else ""
-#     #         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-#     #             self, "Esporta Dataset Reale", "", "TXT (*.txt)"
-#     #         )
-            
-#     #         if save_path:
-#     #             with open(save_path, 'w', encoding='utf-8') as f:
-#     #                 # Scriviamo ogni segmento su una nuova riga
-#     #                 f.write("\n".join(lines_output))
-#     #             self.statusBar().showMessage(f"Salvato: {len(lines_output)} segmenti in formato (x1,x2,y1,y2,H,W).")
-            
-#     #     except Exception as e:
-#     #         QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
-
-#     # def merge_parallel_lines(self):
-#     #     """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
-#     #     import numpy as np
-#     #     canvas = self._canvas_widgets.canvas
-#     #     if not canvas.shapes: return
-
-#     #     # Parametri di tolleranza per la tua ricerca
-#     #     DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
-#     #     ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
-
-#     #     shapes = list(canvas.shapes)
-#     #     merged_list = []
-#     #     used = [False] * len(shapes)
-
-#     #     for i in range(len(shapes)):
-#     #         # Questa riga deve avere 1 tab (o 4 spazi) di rientro
-#     #         if used[i] or len(shapes[i].points) < 2: 
-#     #             continue
-            
-#     #         group = [shapes[i]]
-#     #         used[i] = True
-            
-#     #         # Parametri linea i
-#     #         p1, p2 = shapes[i].points[0], shapes[i].points[1]
-#     #         vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-#     #         angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
-
-#     #         for j in range(i + 1, len(shapes)):
-#     #             # Questo blocco deve avere 2 tab (o 8 spazi)
-#     #             if used[j] or len(shapes[j].points) < 2: 
-#     #                 continue
-                
-#     #             p3, p4 = shapes[j].points[0], shapes[j].points[1]
-#     #             vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-#     #             angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
-
-#     #             # Verifica parallelismo
-#     #             diff_angle = abs(angle_i - angle_j)
-#     #             diff_angle = min(diff_angle, np.pi - diff_angle)
-
-#     #             if diff_angle < np.radians(ANGLE_EPSILON):
-#     #                 # Verifica distanza ortogonale
-#     #                 mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-#     #                 dist = self._dist_point_to_line(mid_j, p1, p2)
-                    
-#     #                 if dist < DIST_EPSILON:
-#     #                     group.append(shapes[j])
-#     #                     used[j] = True
-            
-#     #         # Parametri linea i
-#     #         p1, p2 = shapes[i].points[0], shapes[i].points[1]
-#     #         vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-#     #         angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
-
-#     #         for j in range(i + 1, len(shapes)):
-#     #             if used[j] or len(shapes[j].points) < 2: continue
-                
-#     #             p3, p4 = shapes[j].points[0], shapes[j].points[1]
-#     #             vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-#     #             angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
-
-#     #             # Verifica parallelismo
-#     #             diff_angle = abs(angle_i - angle_j)
-#     #             diff_angle = min(diff_angle, np.pi - diff_angle)
-
-#     #             if diff_angle < np.radians(ANGLE_EPSILON):
-#     #                 # Verifica distanza tra le rette (proiezione ortogonale)
-#     #                 mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-#     #                 dist = self._dist_point_to_line(mid_j, p1, p2)
-                    
-#     #                 if dist < DIST_EPSILON:
-#     #                     group.append(shapes[j])
-#     #                     used[j] = True
-
-#     #         # Creazione della LINEA MEDIA
-#     #         if len(group) > 1:
-#     #             new_shape = self._create_average_line(group)
-#     #             merged_list.append(new_shape)
-#     #         else:
-#     #             merged_list.append(shapes[i])
     
-#     #     # Aggiornamento UI (Safe Mode)
-        
-#     #     # canvas.shapes = merged_list
-#     #     # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-#     #     # if label_widget:
-#     #     #     label_widget.clear()
-#     #     #     for s in merged_list:
-#     #     #         self.addLabel(s)
-        
-#     #     # canvas.update()
-#     #     # self.setDirty()
-#     #     # self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
-
-
-#     #     # # --- PARTE FINALE CORRETTA ---
-#     #     # # 1. Pulizia totale sincronizzata
-#     #     # canvas.shapes = []
-#     #     # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-#     #     # if label_widget:
-#     #     #         label_widget.clear()
-
-#     #     # # 2. Re-inserimento tramite addLabel
-#     #     # # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
-#     #     # for s in merged_list:
-#     #     #         # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
-#     #     #         if s.label == "Linea_Merged":
-#     #     #             s.label = self.get_next_label(prefix="L_")
-            
-#     #     #         self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
-#     #     #         canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
-#     #     # self.setEditMode() 
-#     #     # canvas.setEditing(True) #Aggiunta
-#     #     # canvas.update() #Aggiutna
-#     #     # self.setDirty()
-#     #     # self._actions.save.setEnabled(True)
-#     #     # self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
-         
-         
-#     #     # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
-#     #     self._canvas_widgets.canvas.shapes = []
-        
-#     #     # Cerchiamo di pulire la lista in modo sicuro
-#     #     # Proviamo i due nomi comuni che LabelMe usa per il widget lista
-#     #     l_widget = getattr(self, 'labelList', None) or getattr(self, 'label_list', None)
-#     #     if l_widget is not None:
-#     #         try:
-#     #             l_widget.clear()
-#     #         except AttributeError:
-#     #             # Se è un oggetto complesso, cerchiamo la view interna
-#     #             if hasattr(l_widget, 'view'):
-#     #                 l_widget.view.clear()
-        
-#     #     # 2. Re-iniezione controllata con registrazione ufficiale
-#     #     for s in merged_list:
-#     #         # Assegnazione ID progressivo
-#     #         if s.label == "Linea_Merged" or not s.label:
-#     #             s.label = self.get_next_label(prefix="L_")
-            
-#     #         # REGISTRAZIONE UFFICIALE: Questo lega la Shape alla MainWindow
-#     #         # Impedisce il crash "ValueError: x not in list" durante la cancellazione
-#     #         self.addLabel(s) 
-            
-#     #         # AGGIUNTA AL DISEGNO
-#     #         if s not in self._canvas_widgets.canvas.shapes:
-#     #             self._canvas_widgets.canvas.shapes.append(s)
-
-#     #     # 3. Ripristino Interfaccia e Modalità Selezione
-#     #     self.setEditMode() 
-#     #     self._canvas_widgets.canvas.setEditing(True)
-        
-#     #     # 4. Stato Finale e Update Grafico
-#     #     self.dirty = True 
-#     #     self._actions.save.setEnabled(True)
-#     #     self._canvas_widgets.canvas.update()
-        
-#     #     self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} linee.")
-            
-          
-         
-        
-
-
-
 #     def merge_parallel_lines(self):
-#         """Fonde segmenti paralleli e vicini (ottimizzato per la tua MainWindow)."""
+#         """Fonde segmenti paralleli e vicini."""
 #         import numpy as np
 #         canvas = self._canvas_widgets.canvas
 #         if not canvas.shapes: 
@@ -1590,61 +710,47 @@
 #             else:
 #                 merged_list.append(shapes[i])
 
-#         # --- SINCRONIZZAZIONE BLINDATA PER LA TUA STRUTTURA ---
-        
-#         # 1. Pulizia corretta usando self._docks
+#         self._docks.label_list.blockSignals(True)
 #         canvas.shapes = []
 #         canvas.selectedShapes = []
-#         # Accediamo alla lista reale dentro il dock
 #         if hasattr(self._docks, 'label_list'):
 #             self._docks.label_list.clear()
 
-#         # 2. Re-inserimento Ufficiale
 #         for s in merged_list:
 #             if s.label == "Linea_Merged" or not s.label:
-#                 # Usa il tuo metodo per ottenere il prossimo ID (es. L_001)
 #                 s.label = self.get_next_label(prefix="L_")
-            
-#             # addLabel() collegherà correttamente la shape al widget nel dock
 #             self.addLabel(s) 
+#             canvas.shapes.append(s)
 
-#         # 3. Ripristino Interfaccia
-#         self.setEditMode()
+#         self._docks.label_list.blockSignals(False)
+
+#         self._switch_canvas_mode(edit=True)
 #         canvas.setEditing(True)
 #         canvas.update()
-        
-#         self.setDirty() # Usa il metodo standard di LabelMe
+#         self.setDirty()
 #         self.statusBar().showMessage(f"Merge completato: {len(canvas.shapes)} linee.")    
         
 #     def _dist_point_to_line(self, p, l1, l2):
-#         """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
 #         import numpy as np
 #         p1 = np.array([l1.x(), l1.y()])
 #         p2 = np.array([l2.x(), l2.y()])
 #         return np.abs(np.cross(p2-p1, p1-p)) / np.linalg.norm(p2-p1)
 
 #     def _create_average_line(self, group):
-#         """Genera una retta media basata sui punti del gruppo."""
-
 #         all_pts = []
 #         for s in group:
 #             for p in s.points:
 #                 all_pts.append([p.x(), p.y()])
 #         all_pts = np.array(all_pts)
 
-#         # Usiamo la PCA (SVD) per trovare la direzione principale della nuvola di punti
 #         centroid = np.mean(all_pts, axis=0)
 #         _, _, vh = np.linalg.svd(all_pts - centroid)
-#         direction = vh[0] # Vettore direzione principale
+#         direction = vh[0] 
 
-#         # Proiettiamo i punti sulla direzione per trovare gli estremi
 #         projections = (all_pts - centroid) @ direction
 #         p_min = centroid + np.min(projections) * direction
 #         p_max = centroid + np.max(projections) * direction
 
-#         # --- APPLICAZIONE SNAP SUI NUOVI ESTREMI ---
-#         # Questo assicura che se la retta media finisce vicino a un vertice 
-#         # di una linea NON mergiata, vi si agganci.
 #         x1, y1 = self._apply_snap(p_min[0], p_min[1])
 #         x2, y2 = self._apply_snap(p_max[0], p_max[1])
 
@@ -1653,56 +759,6 @@
 #         new_s.addPoint(QtCore.QPointF(x2, y2))
 #         new_s.close()
 #         return new_s
-#         #     for j in range(i + 1, len(shapes)):
-#         #         if used[j]: continue
-#         #         s2 = shapes[j]
-                
-#         #         # Calcolo parametri retta 2
-#         #         p3, p4 = s2.points[0], s2.points[1]
-#         #         vec2 = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-#         #         ang2 = np.arctan2(vec2[1], vec2[0]) % np.pi
-#         #         center2 = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-
-#         #         # Verifica parallelismo e vicinanza
-#         #         ang_diff = abs(ang1 - ang2)
-#         #         ang_diff = min(ang_diff, np.pi - ang_diff)
-#         #         dist = np.linalg.norm(center1 - center2)
-
-#         #         if ang_diff < np.radians(ANGLE_EPSILON) and dist < DIST_EPSILON:
-#         #             group.append(s2)
-#         #             used[j] = True
-
-#         #     # Se ho trovato linee simili, creo la "linea media"
-#         #     if len(group) > 1:
-#         #         avg_p1_x = sum(s.points[0].x() for s in group) / len(group)
-#         #         avg_p1_y = sum(s.points[0].y() for s in group) / len(group)
-#         #         avg_p2_x = sum(s.points[1].x() for s in group) / len(group)
-#         #         avg_p2_y = sum(s.points[1].y() for s in group) / len(group)
-                
-#         #         new_s = Shape(label="linea_merged", shape_type="line")
-#         #         new_s.addPoint(QtCore.QPointF(avg_p1_x, avg_p1_y))
-#         #         new_s.addPoint(QtCore.QPointF(avg_p2_x, avg_p2_y))
-#         #         merged_list.append(new_s)
-#         #     else:
-#         #         merged_list.append(s1)
-
-#         # # Aggiorna il Canvas e la lista etichette
-#         # canvas.shapes = merged_list
-#         # # In LabelMe il widget della lista etichette è solitamente self.labelList
-#         # # ma dobbiamo assicurarci di svuotarlo e riempirlo correttamente
-#         # if hasattr(self, 'labelList'):
-#         #     self.labelList.clear()
-#         #     for s in merged_list:
-#         #         # addLabel è il metodo standard di MainWindow per sincronizzare UI e Canvas
-#         #         self.addLabel(s)
-#         # elif hasattr(self, 'label_list'): # Backup per versioni alternative
-#         #     self.label_list.clear()
-#         #     for s in merged_list:
-#         #         self.addLabel(s)
-        
-#         # canvas.update()
-#         # self.setDirty() # Indica che il file è stato modificato e va salvato
-#         # self.statusBar().showMessage(f"Merge completato: ridotte a {len(merged_list)} linee.")
  
     
 #     def _setup_menus(self) -> _Menus:
@@ -2238,7 +1294,9 @@
 #         self.setDirty()
 
 #     def resetState(self) -> None:
+#         self._docks.label_list.blockSignals(True)
 #         self._docks.label_list.clear()
+#         self._docks.label_list.blockSignals(False)
 #         self._filename = None
 #         self._image_path = None
 #         self.imageData = None
@@ -2336,7 +1394,7 @@
 #     def _edit_label(self, value=None):
 #         items = self._docks.label_list.selectedItems()
 #         if not items:
-#             logger.warning("No label is selected, so cannot edit label.")
+#             # Rimosso il warning invadente che non aggiunge valore
 #             return
 
 #         shape = items[0].shape()
@@ -2761,48 +1819,8 @@
 #             self._canvas_widgets.canvas.undoLastLine()
 #             if self._canvas_widgets.canvas.shapesBackups:
 #                 self._canvas_widgets.canvas.shapesBackups.pop()
-#     # Callback functions:
 
-#     # def newShape(self) -> None:
-#     #     """Pop-up and give focus to the label editor.
-
-#     #     position MUST be in global coordinates.
-#     #     """
-#     #     items = self._docks.unique_label_list.selectedItems()
-#     #     text = None
-#     #     if items:
-#     #         text = items[0].data(Qt.UserRole)
-#     #     flags = {}
-#     #     group_id = None
-#     #     description = ""
-#     #     if self._config["display_label_popup"] or not text:
-#     #         previous_text = self._label_dialog.edit.text()
-#     #         text, flags, group_id, description = self._label_dialog.popUp(text)
-#     #         if not text:
-#     #             self._label_dialog.edit.setText(previous_text)
-
-#     #     if text and not self.validateLabel(text):
-#     #         self.errorMessage(
-#     #             self.tr("Invalid label"),
-#     #             self.tr("Invalid label '{}' with validation type '{}'").format(
-#     #                 text, self._config["validate_label"]
-#     #             ),
-#     #         )
-#     #         text = ""
-#     #     if text:
-#     #         self._docks.label_list.clearSelection()
-#     #         shape = self._canvas_widgets.canvas.setLastLabel(text, flags)
-#     #         shape.group_id = group_id
-#     #         shape.description = description
-#     #         self.addLabel(shape)
-#     #         self._actions.edit_mode.setEnabled(True)
-#     #         self._actions.undo_last_point.setEnabled(False)
-#     #         self._actions.undo.setEnabled(True)
-#     #         self.setDirty()
-#     #     else:
-#     #         self._canvas_widgets.canvas.undoLastLine()
-#     #         self._canvas_widgets.canvas.shapesBackups.pop()
-
+    
 #     def scrollRequest(self, delta: int, orientation: Qt.Orientation) -> None:
 #         units = -delta * 0.1  # natural scroll
 #         bar = self._canvas_widgets.scroll_bars[orientation]
@@ -3317,11 +2335,12 @@
 #             os.remove(label_file)
 #             logger.info(f"Label file is removed: {label_file}")
 
-#             item = self._docks.file_list.currentItem()
-#             if item:
-#                 item.setCheckState(Qt.Unchecked)
+#         item = self._docks.file_list.currentItem()
+#         if item:
+#             item.setCheckState(Qt.Unchecked)
 
-#             self.resetState()
+#         # FIX: Ensure everything is cleared even if the file is not saved locally yet
+#         self.resetState()
 
 #     def _open_config_file(self) -> None:
 #         if self._config_file is None:
@@ -3546,6 +2565,7 @@
 
 #     logger.debug("found {:d} images in {!r}", len(images), root_dir)
 #     return natsort.os_sorted(images)
+
 from __future__ import annotations
 
 import enum
@@ -3762,10 +2782,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         Shape.line_color = QtGui.QColor(*self._config["shape"]["line_color"])
         Shape.fill_color = QtGui.QColor(*self._config["shape"]["fill_color"])
-        Shape.select_line_color = QtGui.QColor(*self._config["shape"]["select_line_color"])
-        Shape.select_fill_color = QtGui.QColor(*self._config["shape"]["select_fill_color"])
-        Shape.vertex_fill_color = QtGui.QColor(*self._config["shape"]["vertex_fill_color"])
-        Shape.hvertex_fill_color = QtGui.QColor(*self._config["shape"]["hvertex_fill_color"])
+        Shape.select_line_color = QtGui.QColor(
+            *self._config["shape"]["select_line_color"]
+        )
+        Shape.select_fill_color = QtGui.QColor(
+            *self._config["shape"]["select_fill_color"]
+        )
+        Shape.vertex_fill_color = QtGui.QColor(
+            *self._config["shape"]["vertex_fill_color"]
+        )
+        Shape.hvertex_fill_color = QtGui.QColor(
+            *self._config["shape"]["hvertex_fill_color"]
+        )
         Shape.point_size = self._config["shape"]["point_size"]
 
         self._copied_shapes = []
@@ -3785,6 +2813,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setAcceptDrops(True)
         self._canvas_widgets = self._setup_canvas()
+        self._canvas_widgets.canvas.selectionChanged.connect(self.sync_selection_to_list)
         self._actions = self._setup_actions()
         self._scalers = {
             _ZoomMode.FIT_WINDOW: self.scaleFitWindow,
@@ -3808,6 +2837,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._setup_toolbars()
         self._status_bar = self._setup_status_bar()
         self._setup_app_state(output_dir=output_dir, filename=filename)
+
         self.updateFileMenu()
         self._canvas_widgets.zoom_widget.valueChanged.connect(self._paint_canvas)
         self.populateModeActions()
@@ -3818,154 +2848,397 @@ class MainWindow(QtWidgets.QMainWindow):
 
         about = action(
             text=f"&About {__appname__}",
-            slot=functools.partial(QMessageBox.about, self, f"About {__appname__}", "Deep VP Editor"),
+            slot=functools.partial(
+                QMessageBox.about,
+                self,
+                f"About {__appname__}",
+                f"""
+<h3>{__appname__}</h3>
+<p>Image Polygonal Annotation with Python</p>
+<p>Version: {__version__}</p>
+<p>Author: Kentaro Wada</p>
+<p>
+    <a href="https://labelme.io">Homepage</a> |
+    <a href="https://labelme.io/docs">Documentation</a> |
+    <a href="https://labelme.io/docs/troubleshoot">Troubleshooting</a>
+</p>
+<p>
+    <a href="https://github.com/wkentaro/labelme">GitHub</a> |
+    <a href="https://x.com/labelmeai">Twitter/X</a>
+</p>
+""",
+            ),
         )
         save = action(
-            text=self.tr("&Save\n"), slot=self.saveFile, shortcut=shortcuts["save"], icon="floppy-disk.svg", tip=self.tr("Save labels to file"), enabled=False,
+            text=self.tr("&Save\n"),
+            slot=self.saveFile,
+            shortcut=shortcuts["save"],
+            icon="floppy-disk.svg",
+            tip=self.tr("Save labels to file"),
+            enabled=False,
         )
         save_as = action(
-            text=self.tr("&Save As"), slot=self.saveFileAs, shortcut=shortcuts["save_as"], icon="floppy-disk.svg", tip=self.tr("Save labels to a different file"), enabled=False,
+            text=self.tr("&Save As"),
+            slot=self.saveFileAs,
+            shortcut=shortcuts["save_as"],
+            icon="floppy-disk.svg",
+            tip=self.tr("Save labels to a different file"),
+            enabled=False,
         )
         save_auto = action(
-            text=self.tr("Save &Automatically"), tip=self.tr("Save automatically"), checkable=True, enabled=True,
+            text=self.tr("Save &Automatically"),
+            tip=self.tr("Save automatically"),
+            checkable=True,
+            enabled=True,
         )
         save_auto.setChecked(self._config["auto_save"])
         save_with_image_data = action(
-            text=self.tr("Save With Image Data"), slot=self.enableSaveImageWithData, tip=self.tr("Save image data in label file"), checkable=True, checked=self._config["with_image_data"],
+            text=self.tr("Save With Image Data"),
+            slot=self.enableSaveImageWithData,
+            tip=self.tr("Save image data in label file"),
+            checkable=True,
+            checked=self._config["with_image_data"],
         )
         change_output_dir = action(
-            text=self.tr("&Change Output Dir"), slot=self.changeOutputDirDialog, shortcut=shortcuts["save_to"], icon="folders.svg", tip=self.tr("Change where annotations are loaded/saved"),
+            text=self.tr("&Change Output Dir"),
+            slot=self.changeOutputDirDialog,
+            shortcut=shortcuts["save_to"],
+            icon="folders.svg",
+            tip=self.tr("Change where annotations are loaded/saved"),
         )
         open_ = action(
-            text=self.tr("&Open\n"), slot=self._open_file_with_dialog, shortcut=shortcuts["open"], icon="folder-open.svg", tip=self.tr("Open image or label file"),
+            text=self.tr("&Open\n"),
+            slot=self._open_file_with_dialog,
+            shortcut=shortcuts["open"],
+            icon="folder-open.svg",
+            tip=self.tr("Open image or label file"),
         )
         open_dir = action(
-            text=self.tr("Open Dir"), slot=self._open_dir_with_dialog, shortcut=shortcuts["open_dir"], icon="folder-open.svg", tip=self.tr("Open Dir"),
+            text=self.tr("Open Dir"),
+            slot=self._open_dir_with_dialog,
+            shortcut=shortcuts["open_dir"],
+            icon="folder-open.svg",
+            tip=self.tr("Open Dir"),
         )
         close = action(
-            text=self.tr("&Close"), slot=self.closeFile, shortcut=shortcuts["close"], icon="x-circle.svg", tip=self.tr("Close current file"),
+            text=self.tr("&Close"),
+            slot=self.closeFile,
+            shortcut=shortcuts["close"],
+            icon="x-circle.svg",
+            tip=self.tr("Close current file"),
         )
         delete_file = action(
-            text=self.tr("&Delete File"), slot=self.deleteFile, shortcut=shortcuts["delete_file"], icon="file-x.svg", tip=self.tr("Delete current label file"), enabled=False,
+            text=self.tr("&Delete File"),
+            slot=self.deleteFile,
+            shortcut=shortcuts["delete_file"],
+            icon="file-x.svg",
+            tip=self.tr("Delete current label file"),
+            enabled=False,
         )
         toggle_keep_prev_mode = action(
-            text=self.tr("Keep Previous Annotation"), slot=self.toggleKeepPrevMode, shortcut=shortcuts["toggle_keep_prev_mode"], icon=None, tip=self.tr('Toggle "keep previous annotation" mode'), checkable=True,
+            text=self.tr("Keep Previous Annotation"),
+            slot=self.toggleKeepPrevMode,
+            shortcut=shortcuts["toggle_keep_prev_mode"],
+            icon=None,
+            tip=self.tr('Toggle "keep previous annotation" mode'),
+            checkable=True,
         )
         toggle_keep_prev_mode.setChecked(self._config["keep_prev"])
         toggle_keep_prev_brightness_contrast = action(
             text=self.tr("Keep Previous Brightness/Contrast"),
-            slot=lambda: self._config.__setitem__("keep_prev_brightness_contrast", not self._config["keep_prev_brightness_contrast"]),
-            checkable=True, checked=self._config["keep_prev_brightness_contrast"],
+            slot=lambda: self._config.__setitem__(
+                "keep_prev_brightness_contrast",
+                not self._config["keep_prev_brightness_contrast"],
+            ),
+            checkable=True,
+            checked=self._config["keep_prev_brightness_contrast"],
         )
         delete = action(
-            self.tr("Delete Shapes"), self.deleteSelectedShape, shortcuts["delete_shape"], icon="trash.svg", tip=self.tr("Delete the selected shapes"), enabled=False,
+            self.tr("Delete Shapes"),
+            self.deleteSelectedShape,
+            shortcuts["delete_shape"],
+            icon="trash.svg",
+            tip=self.tr("Delete the selected shapes"),
+            enabled=False,
         )
         edit = action(
-            self.tr("&Edit Label"), self._edit_label, shortcuts["edit_label"], icon="note-pencil.svg", tip=self.tr("Modify the label of the selected shape"), enabled=False,
+            self.tr("&Edit Label"),
+            self._edit_label,
+            shortcuts["edit_label"],
+            icon="note-pencil.svg",
+            tip=self.tr("Modify the label of the selected shape"),
+            enabled=False,
         )
         duplicate = action(
-            self.tr("Duplicate Shapes"), self.duplicateSelectedShape, shortcuts["duplicate_shape"], icon="copy.svg", tip=self.tr("Create a duplicate of the selected shapes"), enabled=False,
+            self.tr("Duplicate Shapes"),
+            self.duplicateSelectedShape,
+            shortcuts["duplicate_shape"],
+            icon="copy.svg",
+            tip=self.tr("Create a duplicate of the selected shapes"),
+            enabled=False,
         )
         copy = action(
-            self.tr("Copy Shapes"), self.copySelectedShape, shortcuts["copy_shape"], "copy_clipboard", self.tr("Copy selected shapes to clipboard"), enabled=False,
+            self.tr("Copy Shapes"),
+            self.copySelectedShape,
+            shortcuts["copy_shape"],
+            "copy_clipboard",
+            self.tr("Copy selected shapes to clipboard"),
+            enabled=False,
         )
         paste = action(
-            self.tr("Paste Shapes"), self.pasteSelectedShape, shortcuts["paste_shape"], "paste", self.tr("Paste copied shapes"), enabled=False,
+            self.tr("Paste Shapes"),
+            self.pasteSelectedShape,
+            shortcuts["paste_shape"],
+            "paste",
+            self.tr("Paste copied shapes"),
+            enabled=False,
         )
         undo_last_point = action(
-            self.tr("Undo last point"), self._canvas_widgets.canvas.undoLastPoint, shortcuts["undo_last_point"], icon="arrow-u-up-left.svg", tip=self.tr("Undo last drawn point"), enabled=False,
+            self.tr("Undo last point"),
+            self._canvas_widgets.canvas.undoLastPoint,
+            shortcuts["undo_last_point"],
+            icon="arrow-u-up-left.svg",
+            tip=self.tr("Undo last drawn point"),
+            enabled=False,
         )
         undo = action(
-            self.tr("Undo\n"), self.undoShapeEdit, shortcuts["undo"], icon="arrow-u-up-left.svg", tip=self.tr("Undo last add and edit of shape"), enabled=False,
+            self.tr("Undo\n"),
+            self.undoShapeEdit,
+            shortcuts["undo"],
+            icon="arrow-u-up-left.svg",
+            tip=self.tr("Undo last add and edit of shape"),
+            enabled=False,
         )
         remove_point = action(
-            text=self.tr("Remove Selected Point"), slot=self.removeSelectedPoint, shortcut=shortcuts["remove_selected_point"], icon="trash.svg", tip=self.tr("Remove selected point from polygon"), enabled=False,
+            text=self.tr("Remove Selected Point"),
+            slot=self.removeSelectedPoint,
+            shortcut=shortcuts["remove_selected_point"],
+            icon="trash.svg",
+            tip=self.tr("Remove selected point from polygon"),
+            enabled=False,
         )
         create_mode = action(
-            text=self.tr("Create Polygons"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="polygon"), shortcut=shortcuts["create_polygon"], icon="polygon.svg", tip=self.tr("Start drawing polygons"), enabled=False,
+            text=self.tr("Create Polygons"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="polygon"),
+            shortcut=shortcuts["create_polygon"],
+            icon="polygon.svg",
+            tip=self.tr("Start drawing polygons"),
+            enabled=False,
         )
         edit_mode = action(
-            self.tr("Edit Shapes"), lambda: self._switch_canvas_mode(edit=True), shortcuts["edit_shape"], icon="note-pencil.svg", tip=self.tr("Move and edit the selected shapes"), enabled=False,
+            self.tr("Edit Shapes"),
+            lambda: self._switch_canvas_mode(edit=True),
+            shortcuts["edit_shape"],
+            icon="note-pencil.svg",
+            tip=self.tr("Move and edit the selected shapes"),
+            enabled=False,
         )
         create_rectangle_mode = action(
-            text=self.tr("Create Rectangle"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="rectangle"), shortcut=shortcuts["create_rectangle"], icon="rectangle.svg", tip=self.tr("Start drawing rectangles"), enabled=False,
+            text=self.tr("Create Rectangle"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="rectangle"),
+            shortcut=shortcuts["create_rectangle"],
+            icon="rectangle.svg",
+            tip=self.tr("Start drawing rectangles"),
+            enabled=False,
         )
         create_circle_mode = action(
-            text=self.tr("Create Circle"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="circle"), shortcut=shortcuts["create_circle"], icon="circle.svg", tip=self.tr("Start drawing circles"), enabled=False,
+            text=self.tr("Create Circle"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="circle"),
+            shortcut=shortcuts["create_circle"],
+            icon="circle.svg",
+            tip=self.tr("Start drawing circles"),
+            enabled=False,
         )
         create_line_mode = action(
-            text=self.tr("Create Line"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="line"), shortcut=shortcuts["create_line"], icon="line-segment.svg", tip=self.tr("Start drawing lines"), enabled=False,
+            text=self.tr("Create Line"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="line"),
+            shortcut=shortcuts["create_line"],
+            icon="line-segment.svg",
+            tip=self.tr("Start drawing lines"),
+            enabled=False,
         )
         create_point_mode = action(
-            text=self.tr("Create Point"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="point"), shortcut=shortcuts["create_point"], icon="circles-four.svg", tip=self.tr("Start drawing points"), enabled=False,
+            text=self.tr("Create Point"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="point"),
+            shortcut=shortcuts["create_point"],
+            icon="circles-four.svg",
+            tip=self.tr("Start drawing points"),
+            enabled=False,
         )
         create_line_strip_mode = action(
-            text=self.tr("Create LineStrip"), slot=lambda: self._switch_canvas_mode(edit=False, createMode="linestrip"), shortcut=shortcuts["create_linestrip"], icon="line-segments.svg", tip=self.tr("Start drawing linestrip. Ctrl+LeftClick ends creation."), enabled=False,
+            text=self.tr("Create LineStrip"),
+            slot=lambda: self._switch_canvas_mode(edit=False, createMode="linestrip"),
+            shortcut=shortcuts["create_linestrip"],
+            icon="line-segments.svg",
+            tip=self.tr("Start drawing linestrip. Ctrl+LeftClick ends creation."),
+            enabled=False,
         )
         create_ai_polygon_mode = action(
-            self.tr("Create AI-Polygon"), lambda: self._switch_canvas_mode(edit=False, createMode="ai_polygon"), None, "ai-polygon.svg", self.tr("Start drawing ai_polygon. Ctrl+LeftClick ends creation."), enabled=False,
+            self.tr("Create AI-Polygon"),
+            lambda: self._switch_canvas_mode(edit=False, createMode="ai_polygon"),
+            None,
+            "ai-polygon.svg",
+            self.tr("Start drawing ai_polygon. Ctrl+LeftClick ends creation."),
+            enabled=False,
         )
         create_ai_mask_mode = action(
-            self.tr("Create AI-Mask"), lambda: self._switch_canvas_mode(edit=False, createMode="ai_mask"), None, "ai-mask.svg", self.tr("Start drawing ai_mask. Ctrl+LeftClick ends creation."), enabled=False,
+            self.tr("Create AI-Mask"),
+            lambda: self._switch_canvas_mode(edit=False, createMode="ai_mask"),
+            None,
+            "ai-mask.svg",
+            self.tr("Start drawing ai_mask. Ctrl+LeftClick ends creation."),
+            enabled=False,
         )
-        
-        # --- RESEARCH ACTIONS ---
+        # --- YOUR CUSTOM ACTION ---
         actionAutoDetect = action(
-            text=self.tr("Auto-Detect Linee"), slot=self.auto_detect_lines, shortcut="Ctrl+Shift+X", icon="magic.svg", tip=self.tr("Rileva automaticamente le linee nella vista corrente"), enabled=False,
+            text=self.tr("Auto-Detect Linee"),
+            slot=self.auto_detect_lines, 
+            shortcut="Ctrl+Shift+X",
+            icon="magic.svg", 
+            tip=self.tr("Rileva automaticamente le linee nella vista corrente"),
+            enabled=False, 
         )
+
         actionProjectlines = action(
-            text=self.tr("Projections Lines"), slot=self.project_lines_preview, shortcut="Ctrl+Shift+P", icon="Projection_and_rejection.svg", tip=self.tr("Proietta le linee ai bordi dell'immagine"), enabled=False,
+            text=self.tr("Projections Lines"),
+            slot=self.project_lines_preview, 
+            shortcut="Ctrl+Shift+P",
+            icon="Projection_and_rejection.svg", 
+            tip=self.tr("Proietta le linee fino all'intersezione con i bordi dell'immagine"),
+            enabled=False, 
         )
+
         actionProjectlines2txt = action(
-            text=self.tr("Save Projected Lines"), slot=self.export_segments_to_txt, shortcut="Ctrl+Shift+K", tip=self.tr("Salva le linee proiettate in txt"), enabled=False,
+            text=self.tr("Save Projected Lines"),
+            slot=self.export_segments_to_txt, 
+            shortcut="Ctrl+Shift+K", 
+            tip=self.tr("Salva le linee proiettate in txt"),
+            enabled=False, 
         )
+
         actionMergeLines = action(
-            text = self.tr("Merge Lines"), slot = self.merge_parallel_lines, shortcut="Ctrl+Shift+M", icon="merging.svg", tip=self.tr("Fonde le linee parallele entro un certo epsilon"), enabled=False
+            text = self.tr("Merge Lines"),
+            slot = self.merge_parallel_lines,
+            shortcut="Ctrl+Shift+M", 
+            icon="merging.svg", 
+            tip=self.tr("Fonde le linee parallele entro un certo epsilon"),
+            enabled=False
         )
+        ######################################################
         
         open_next_img = action(
-            text=self.tr("&Next Image"), slot=self._open_next_image, shortcut=shortcuts["open_next"], icon="arrow-fat-right.svg", tip=self.tr("Open next"), enabled=False,
+            text=self.tr("&Next Image"),
+            slot=self._open_next_image,
+            shortcut=shortcuts["open_next"],
+            icon="arrow-fat-right.svg",
+            tip=self.tr("Open next (hold Ctl+Shift to copy labels)"),
+            enabled=False,
         )
         open_prev_img = action(
-            text=self.tr("&Prev Image"), slot=self._open_prev_image, shortcut=shortcuts["open_prev"], icon="arrow-fat-left.svg", tip=self.tr("Open prev"), enabled=False,
+            text=self.tr("&Prev Image"),
+            slot=self._open_prev_image,
+            shortcut=shortcuts["open_prev"],
+            icon="arrow-fat-left.svg",
+            tip=self.tr("Open prev (hold Ctl+Shift to copy labels)"),
+            enabled=False,
         )
         keep_prev_scale = action(
-            self.tr("&Keep Previous Scale"), self.enableKeepPrevScale, tip=self.tr("Keep previous zoom scale"), checkable=True, checked=self._config["keep_prev_scale"], enabled=True,
+            self.tr("&Keep Previous Scale"),
+            self.enableKeepPrevScale,
+            tip=self.tr("Keep previous zoom scale"),
+            checkable=True,
+            checked=self._config["keep_prev_scale"],
+            enabled=True,
         )
         fit_window = action(
-            self.tr("&Fit Window"), self.setFitWindow, shortcuts["fit_window"], icon="frame-corners.svg", tip=self.tr("Zoom follows window size"), checkable=True, enabled=False,
+            self.tr("&Fit Window"),
+            self.setFitWindow,
+            shortcuts["fit_window"],
+            icon="frame-corners.svg",
+            tip=self.tr("Zoom follows window size"),
+            checkable=True,
+            enabled=False,
         )
         fit_width = action(
-            self.tr("Fit &Width"), self.setFitWidth, shortcuts["fit_width"], icon="frame-arrows-horizontal.svg", tip=self.tr("Zoom follows window width"), checkable=True, enabled=False,
+            self.tr("Fit &Width"),
+            self.setFitWidth,
+            shortcuts["fit_width"],
+            icon="frame-arrows-horizontal.svg",
+            tip=self.tr("Zoom follows window width"),
+            checkable=True,
+            enabled=False,
         )
         brightness_contrast = action(
-            self.tr("&Brightness Contrast"), self.brightnessContrast, None, "brightness-contrast.svg", self.tr("Adjust brightness and contrast"), enabled=False,
+            self.tr("&Brightness Contrast"),
+            self.brightnessContrast,
+            None,
+            "brightness-contrast.svg",
+            self.tr("Adjust brightness and contrast"),
+            enabled=False,
         )
         zoom_in = action(
-            self.tr("Zoom &In"), lambda _: self._add_zoom(increment=1.1), shortcuts["zoom_in"], icon="magnifying-glass-minus.svg", tip=self.tr("Increase zoom level"), enabled=False,
+            self.tr("Zoom &In"),
+            lambda _: self._add_zoom(increment=1.1),
+            shortcuts["zoom_in"],
+            icon="magnifying-glass-minus.svg",
+            tip=self.tr("Increase zoom level"),
+            enabled=False,
         )
         zoom_out = action(
-            self.tr("&Zoom Out"), lambda _: self._add_zoom(increment=0.9), shortcuts["zoom_out"], icon="magnifying-glass-plus.svg", tip=self.tr("Decrease zoom level"), enabled=False,
+            self.tr("&Zoom Out"),
+            lambda _: self._add_zoom(increment=0.9),
+            shortcuts["zoom_out"],
+            icon="magnifying-glass-plus.svg",
+            tip=self.tr("Decrease zoom level"),
+            enabled=False,
         )
         zoom_org = action(
-            self.tr("&Original size"), self._set_zoom_to_original, shortcuts["zoom_to_original"], icon="image-square.svg", tip=self.tr("Zoom to original size"), enabled=False,
+            self.tr("&Original size"),
+            self._set_zoom_to_original,
+            shortcuts["zoom_to_original"],
+            icon="image-square.svg",
+            tip=self.tr("Zoom to original size"),
+            enabled=False,
         )
         reset_layout = action(
-            text=self.tr("Reset Layout"), slot=self._reset_layout, icon="layout-duotone.svg",
+            text=self.tr("Reset Layout"),
+            slot=self._reset_layout,
+            icon="layout-duotone.svg",
         )
         fill_drawing = action(
-            self.tr("Fill Drawing Polygon"), self._canvas_widgets.canvas.setFillDrawing, None, icon="paint-bucket.svg", tip=self.tr("Fill polygon while drawing"), checkable=True, enabled=True,
+            self.tr("Fill Drawing Polygon"),
+            self._canvas_widgets.canvas.setFillDrawing,
+            None,
+            icon="paint-bucket.svg",
+            tip=self.tr("Fill polygon while drawing"),
+            checkable=True,
+            enabled=True,
         )
         if self._config["canvas"]["fill_drawing"]:
             fill_drawing.trigger()
         hide_all = action(
-            self.tr("&Hide\nShapes"), functools.partial(self.toggleShapes, False), shortcuts["hide_all_shapes"], icon="eye.svg", tip=self.tr("Hide all shapes"), enabled=False,
+            self.tr("&Hide\nShapes"),
+            functools.partial(self.toggleShapes, False),
+            shortcuts["hide_all_shapes"],
+            icon="eye.svg",
+            tip=self.tr("Hide all shapes"),
+            enabled=False,
         )
         show_all = action(
-            self.tr("&Show\nShapes"), functools.partial(self.toggleShapes, True), shortcuts["show_all_shapes"], icon="eye.svg", tip=self.tr("Show all shapes"), enabled=False,
+            self.tr("&Show\nShapes"),
+            functools.partial(self.toggleShapes, True),
+            shortcuts["show_all_shapes"],
+            icon="eye.svg",
+            tip=self.tr("Show all shapes"),
+            enabled=False,
         )
         toggle_all = action(
-            self.tr("&Toggle\nShapes"), functools.partial(self.toggleShapes, None), shortcuts["toggle_all_shapes"], icon="eye.svg", tip=self.tr("Toggle all shapes"), enabled=False,
+            self.tr("&Toggle\nShapes"),
+            functools.partial(self.toggleShapes, None),
+            shortcuts["toggle_all_shapes"],
+            icon="eye.svg",
+            tip=self.tr("Toggle all shapes"),
+            enabled=False,
         )
 
         zoom_widget_action = QtWidgets.QWidgetAction(self)
@@ -3977,7 +3250,15 @@ class MainWindow(QtWidgets.QMainWindow):
         zoom_widget_action.setDefaultWidget(QtWidgets.QWidget())
         zoom_widget_action.defaultWidget().setLayout(zoom_box_layout)
         self._canvas_widgets.zoom_widget.setWhatsThis(
-            str(self.tr("Zoom in or out of the image.")).format(utils.fmtShortcut(f"{shortcuts['zoom_in']},{shortcuts['zoom_out']}"), utils.fmtShortcut(self.tr("Ctrl+Wheel")))
+            str(
+                self.tr(
+                    "Zoom in or out of the image. Also accessible with "
+                    "{} and {} from the canvas."
+                )
+            ).format(
+                utils.fmtShortcut(f"{shortcuts['zoom_in']},{shortcuts['zoom_out']}"),
+                utils.fmtShortcut(self.tr("Ctrl+Wheel")),
+            )
         )
         self._canvas_widgets.zoom_widget.setEnabled(False)
 
@@ -4000,40 +3281,149 @@ class MainWindow(QtWidgets.QMainWindow):
             ("Save Projected Lines", actionProjectlines2txt),
             ("Merge Lines", actionMergeLines)
         ]
-        zoom = (self._canvas_widgets.zoom_widget, zoom_in, zoom_out, zoom_org, fit_window, fit_width)
-        on_load_active = (close, create_mode, create_rectangle_mode, create_circle_mode, create_line_mode, create_point_mode, create_line_strip_mode, create_ai_polygon_mode, create_ai_mask_mode, brightness_contrast, actionAutoDetect, actionProjectlines, actionProjectlines2txt, actionMergeLines)
-        on_shapes_present = (save_as, hide_all, show_all, toggle_all)
-        context_menu = (*[draw_action for _, draw_action in draw], actionAutoDetect, actionProjectlines, actionProjectlines2txt, actionMergeLines, edit_mode, edit, duplicate, copy, paste, delete, undo, undo_last_point, remove_point)
-        edit_menu = (edit, duplicate, copy, paste, delete, None, undo, undo_last_point, None, remove_point, None, toggle_keep_prev_mode)
-
-        return _Actions(
-            about=about, save=save, save_as=save_as, save_auto=save_auto, save_with_image_data=save_with_image_data, change_output_dir=change_output_dir,
-            open=open_, close=close, delete_file=delete_file, toggle_keep_prev_mode=toggle_keep_prev_mode, toggle_keep_prev_brightness_contrast=toggle_keep_prev_brightness_contrast,
-            delete=delete, edit=edit, duplicate=duplicate, copy=copy, paste=paste, undo_last_point=undo_last_point, undo=undo, remove_point=remove_point,
-            create_mode=create_mode, edit_mode=edit_mode, create_rectangle_mode=create_rectangle_mode, create_circle_mode=create_circle_mode, create_line_mode=create_line_mode,
-            create_point_mode=create_point_mode, create_line_strip_mode=create_line_strip_mode, create_ai_polygon_mode=create_ai_polygon_mode, create_ai_mask_mode=create_ai_mask_mode,
-            open_next_img=open_next_img, open_prev_img=open_prev_img, keep_prev_scale=keep_prev_scale, fit_window=fit_window, fit_width=fit_width, brightness_contrast=brightness_contrast,
-            zoom_in=zoom_in, zoom_out=zoom_out, zoom_org=zoom_org, reset_layout=reset_layout, fill_drawing=fill_drawing, hide_all=hide_all, show_all=show_all, toggle_all=toggle_all,
-            open_dir=open_dir, zoom_widget_action=zoom_widget_action, draw=draw, zoom=zoom, on_load_active=on_load_active, on_shapes_present=on_shapes_present,
-            context_menu=context_menu, edit_menu=edit_menu,
+        zoom = (
+            self._canvas_widgets.zoom_widget,
+            zoom_in,
+            zoom_out,
+            zoom_org,
+            fit_window,
+            fit_width,
         )
-
+        on_load_active = (
+            close,
+            create_mode,
+            create_rectangle_mode,
+            create_circle_mode,
+            create_line_mode,
+            create_point_mode,
+            create_line_strip_mode,
+            create_ai_polygon_mode,
+            create_ai_mask_mode,
+            brightness_contrast,
+            actionAutoDetect,
+            actionProjectlines,
+            actionProjectlines2txt,
+            actionMergeLines,
+        )
+        on_shapes_present = (save_as, hide_all, show_all, toggle_all)
+        context_menu = (
+            *[draw_action for _, draw_action in draw],
+            actionAutoDetect,
+            actionProjectlines,
+            actionProjectlines2txt,
+            actionMergeLines,
+            edit_mode,
+            edit,
+            duplicate,
+            copy,
+            paste,
+            delete,
+            undo,
+            undo_last_point,
+            remove_point,
+        )
+        edit_menu = (
+            edit,
+            duplicate,
+            copy,
+            paste,
+            delete,
+            None,
+            undo,
+            undo_last_point,
+            None,
+            remove_point,
+            None,
+            toggle_keep_prev_mode,
+        )
+    
+        
+        return _Actions(
+            about=about,
+            save=save,
+            save_as=save_as,
+            save_auto=save_auto,
+            save_with_image_data=save_with_image_data,
+            change_output_dir=change_output_dir,
+            open=open_,
+            close=close,
+            delete_file=delete_file,
+            toggle_keep_prev_mode=toggle_keep_prev_mode,
+            toggle_keep_prev_brightness_contrast=toggle_keep_prev_brightness_contrast,
+            delete=delete,
+            edit=edit,
+            duplicate=duplicate,
+            copy=copy,
+            paste=paste,
+            undo_last_point=undo_last_point,
+            undo=undo,
+            remove_point=remove_point,
+            create_mode=create_mode,
+            edit_mode=edit_mode,
+            create_rectangle_mode=create_rectangle_mode,
+            create_circle_mode=create_circle_mode,
+            create_line_mode=create_line_mode,
+            create_point_mode=create_point_mode,
+            create_line_strip_mode=create_line_strip_mode,
+            create_ai_polygon_mode=create_ai_polygon_mode,
+            create_ai_mask_mode=create_ai_mask_mode,
+            open_next_img=open_next_img,
+            open_prev_img=open_prev_img,
+            keep_prev_scale=keep_prev_scale,
+            fit_window=fit_window,
+            fit_width=fit_width,
+            brightness_contrast=brightness_contrast,
+            zoom_in=zoom_in,
+            zoom_out=zoom_out,
+            zoom_org=zoom_org,
+            reset_layout=reset_layout,
+            fill_drawing=fill_drawing,
+            hide_all=hide_all,
+            show_all=show_all,
+            toggle_all=toggle_all,
+            open_dir=open_dir,
+            zoom_widget_action=zoom_widget_action,
+            draw=draw,
+            zoom=zoom,
+            on_load_active=on_load_active,
+            on_shapes_present=on_shapes_present,
+            context_menu=context_menu,
+            edit_menu=edit_menu,
+        )
+    
+        
     def get_next_label(self, prefix="L_"):
         """Trova il numero più alto tra le etichette esistenti e suggerisce il successivo."""
         max_id = -1
         target_canvas = self._canvas_widgets.canvas
+        
         for shape in target_canvas.shapes:
             if shape.label and shape.label.startswith(prefix):
                 try:
-                    num = int(shape.label.replace(prefix, ""))
+                    num_str = shape.label.replace(prefix, "")
+                    num = int(num_str)
                     if num > max_id:
                         max_id = num
                 except ValueError:
                     continue
+        
         return f"{prefix}{max_id + 1:03d}"
 
+    def _apply_snap(self, x, y, epsilon=12.0):
+        """Cerca il vertice più vicino nel raggio epsilon per garantire punti comuni."""
+        canvas = self._canvas_widgets.canvas
+        best_dist = epsilon
+        best_p = (x, y)
+        for shape in canvas.shapes:
+            for p in shape.points:
+                dist = math.hypot(x - p.x(), y - p.y())
+                if dist < best_dist:
+                    best_dist = dist
+                    best_p = (p.x(), p.y())
+        return best_p
+        
     def auto_detect_lines(self):
-        """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
+        """Estrae i segmenti LSD, esegue lo Snap dinamico e li inietta nel Canvas."""
         file_path = None
         possibili_variabili = ['imagePath', 'image_path', '_image_path', 'filename', '_filename', 'filePath', '_image_file']
         for var_name in possibili_variabili:
@@ -4062,41 +3452,44 @@ class MainWindow(QtWidgets.QMainWindow):
             if length >= min_length:
                 raw_coords.append([x1, y1, x2, y2])
         
-        snap_epsilon = 5.0 
-        for i in range(len(raw_coords)):
-            for j in range(i + 1, len(raw_coords)):
-                for idx_i in [(0,1), (2,3)]:
-                    for idx_j in [(0,1), (2,3)]:
-                        dist = math.hypot(raw_coords[i][idx_i[0]] - raw_coords[j][idx_j[0]], 
-                                          raw_coords[i][idx_i[1]] - raw_coords[j][idx_j[1]])
-                        if dist < snap_epsilon:
-                            raw_coords[j][idx_j[0]] = raw_coords[i][idx_i[0]]
-                            raw_coords[j][idx_j[1]] = raw_coords[i][idx_i[1]]
-                        
         target_canvas = self._canvas_widgets.canvas
         raw_coords = raw_coords[:800]
 
-        # Blocchiamo i segnali per evitare loop di aggiornamento UI durate l'inserimento massivo
-        self._docks.label_list.blockSignals(True)
-
-        for idx, coords in enumerate(raw_coords):
+        for coords in raw_coords:
             x1_raw, y1_raw, x2_raw, y2_raw = coords
+            
+            # Snap in fase di inserimento (trova punti comuni con i segmenti appena inseriti)
             x1, y1 = self._apply_snap(x1_raw, y1_raw)
             x2, y2 = self._apply_snap(x2_raw, y2_raw)
             
+            # Evita linee degeneri a lunghezza zero dopo lo snap
+            if math.hypot(x2 - x1, y2 - y1) < 1.0:
+                continue
+            
             unique_label = self.get_next_label(prefix="L_")
-            shape = Shape(label=unique_label, shape_type="polygon")
+            
+            # FIX SELEZIONE CANVAS: se è "polygon", un segmento a 2 punti ha area 0 e non rileva il click del mouse. 
+            # Deve essere "line" per consentire a Qt di usare la distanza lineare per il click.
+            shape = Shape(label=unique_label, shape_type="line") 
             shape.addPoint(QtCore.QPointF(x1, y1))
             shape.addPoint(QtCore.QPointF(x2, y2))
+
             shape.group_id = None
             shape.description = ""
             shape.flags = {}
             shape.close() 
 
             target_canvas.shapes.append(shape)
-            self.addLabel(shape)
+            
+            if hasattr(self, 'addLabel'):
+                self.addLabel(shape)
+            elif hasattr(self, 'labelList'):
+                self.labelList.addShape(shape)
         
-        self._docks.label_list.blockSignals(False)
+        try:
+            target_canvas.selectionChanged.connect(self.sync_selection_to_list)
+        except:
+            pass 
 
         if hasattr(target_canvas, 'storeShapes'):
             target_canvas.storeShapes()       
@@ -4104,18 +3497,31 @@ class MainWindow(QtWidgets.QMainWindow):
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Rilevati {len(raw_coords)} segmenti con Snap attivo.")
+        
+        # Abilita modalità Selezione così puoi subito cliccare sul canvas
         self._switch_canvas_mode(edit=True)
             
-    def _apply_snap(self, x, y, epsilon=10.0):
-        """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
-        target_canvas = self._canvas_widgets.canvas
-        for shape in target_canvas.shapes:
-            for p in shape.points:
-                dist = math.hypot(x - p.x(), y - p.y())
-                if dist < epsilon:
-                    return p.x(), p.y()
-        return x, y
+    def sync_selection_to_list(self):
+        """Sincronizza in sicurezza il click sulla linea nel canvas con la lista laterale."""
+        try:
+            canvas = self._canvas_widgets.canvas
+            label_list_widget = self._docks.label_list
             
+            if not canvas.selectedShapes or label_list_widget is None:
+                return
+
+            shape = canvas.selectedShapes[-1]
+            label_list_widget.clearSelection()
+        
+            # Iterazione robusta compatibile con la lista di LabelMe
+            for item in label_list_widget:
+                if getattr(item, 'shape', lambda: None)() == shape:
+                    item.setSelected(True)
+                    label_list_widget.scrollToItem(item)
+                    break
+        except Exception as e:
+            print(f"Errore sincronizzazione: {e}")
+
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
@@ -4124,19 +3530,24 @@ class MainWindow(QtWidgets.QMainWindow):
             
         img_w = target_canvas.pixmap.width()
         img_h = target_canvas.pixmap.height()
+        
         original_shapes = list(target_canvas.shapes)
         new_projected_shapes = []
 
         for shape in original_shapes:
-            if len(shape.points) < 2: continue
+            if len(shape.points) < 2:
+                continue
+            
             for i in range(len(shape.points) - 1):
                 p1 = shape.points[i]
                 p2 = shape.points[i+1]
+                
                 x1, y1 = p1.x(), p1.y()
                 x2, y2 = p2.x(), p2.y()
 
                 dx, dy = x2 - x1, y2 - y1
-                if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+                if abs(dx) < 1e-6 and abs(dy) < 1e-6: 
+                    continue
 
                 t_candidates = []
                 if abs(dx) > 1e-10:
@@ -4153,14 +3564,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 if len(valid_pts) >= 2:
                     valid_pts.sort(key=lambda p: (p[0], p[1]))
                     ps, pe = valid_pts[0], valid_pts[-1]
+                    
+                    # Usa "line" in modo coerente
                     new_shape = Shape(label=shape.label, shape_type="line")
                     new_shape.addPoint(QtCore.QPointF(ps[0], ps[1]))
                     new_shape.addPoint(QtCore.QPointF(pe[0], pe[1]))
+                    
                     new_shape.group_id = shape.group_id
                     new_shape.close()
                     new_projected_shapes.append(new_shape)
 
-        self._docks.label_list.blockSignals(True)
         target_canvas.shapes = []
         if hasattr(self._docks, 'label_list'):
             self._docks.label_list.clear()
@@ -4169,7 +3582,6 @@ class MainWindow(QtWidgets.QMainWindow):
             target_canvas.shapes.append(s)
             self.addLabel(s)
             
-        self._docks.label_list.blockSignals(False)
         target_canvas.update()
         self.setDirty() 
         self.statusBar().showMessage(f"Proiettati {len(new_projected_shapes)} segmenti adiacenti.")
@@ -4209,7 +3621,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(f"Dataset salvato: {len(lines_output)} segmenti.")      
     
     def merge_parallel_lines(self):
-        """Fonde segmenti paralleli e vicini."""
+        """Fonde segmenti paralleli e vicini (ottimizzato per la tua MainWindow)."""
         import numpy as np
         canvas = self._canvas_widgets.canvas
         if not canvas.shapes: 
@@ -4258,7 +3670,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 merged_list.append(shapes[i])
 
-        self._docks.label_list.blockSignals(True)
         canvas.shapes = []
         canvas.selectedShapes = []
         if hasattr(self._docks, 'label_list'):
@@ -4267,24 +3678,26 @@ class MainWindow(QtWidgets.QMainWindow):
         for s in merged_list:
             if s.label == "Linea_Merged" or not s.label:
                 s.label = self.get_next_label(prefix="L_")
+            
             self.addLabel(s) 
             canvas.shapes.append(s)
-
-        self._docks.label_list.blockSignals(False)
 
         self._switch_canvas_mode(edit=True)
         canvas.setEditing(True)
         canvas.update()
+        
         self.setDirty()
         self.statusBar().showMessage(f"Merge completato: {len(canvas.shapes)} linee.")    
         
     def _dist_point_to_line(self, p, l1, l2):
+        """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
         import numpy as np
         p1 = np.array([l1.x(), l1.y()])
         p2 = np.array([l2.x(), l2.y()])
         return np.abs(np.cross(p2-p1, p1-p)) / np.linalg.norm(p2-p1)
 
     def _create_average_line(self, group):
+        """Genera una retta media basata sui punti del gruppo e applica snap ai vertici."""
         all_pts = []
         for s in group:
             for p in s.points:
@@ -4299,16 +3712,17 @@ class MainWindow(QtWidgets.QMainWindow):
         p_min = centroid + np.min(projections) * direction
         p_max = centroid + np.max(projections) * direction
 
+        # Snap post-merge con il canvas
         x1, y1 = self._apply_snap(p_min[0], p_min[1])
         x2, y2 = self._apply_snap(p_max[0], p_max[1])
 
-        new_s = Shape(label="Linea_Merged", shape_type="polygon")
+        # Usa "line" per permettere sempre la selezione
+        new_s = Shape(label="Linea_Merged", shape_type="line")
         new_s.addPoint(QtCore.QPointF(x1, y1))
         new_s.addPoint(QtCore.QPointF(x2, y2))
         new_s.close()
         return new_s
  
-    
     def _setup_menus(self) -> _Menus:
         action = functools.partial(utils.newAction, self)
         shortcuts = self._config["shortcuts"]
@@ -4842,9 +4256,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
 
     def resetState(self) -> None:
-        self._docks.label_list.blockSignals(True)
         self._docks.label_list.clear()
-        self._docks.label_list.blockSignals(False)
         self._filename = None
         self._image_path = None
         self.imageData = None
@@ -4942,7 +4354,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _edit_label(self, value=None):
         items = self._docks.label_list.selectedItems()
         if not items:
-            # Rimosso il warning invadente che non aggiunge valore
             return
 
         shape = items[0].shape()
@@ -5367,6 +4778,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._canvas_widgets.canvas.undoLastLine()
             if self._canvas_widgets.canvas.shapesBackups:
                 self._canvas_widgets.canvas.shapesBackups.pop()
+    # Callback functions:
 
     
     def scrollRequest(self, delta: int, orientation: Qt.Orientation) -> None:
@@ -5887,7 +5299,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if item:
             item.setCheckState(Qt.Unchecked)
 
-        # FIX: Ensure everything is cleared even if the file is not saved locally yet
         self.resetState()
 
     def _open_config_file(self) -> None:
