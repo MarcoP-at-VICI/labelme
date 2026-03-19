@@ -554,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         actionProjectlines2txt = action(
             text=self.tr("Save Projected Lines"),
-            slot=self.export_projected_to_txt, # Ensure you've defined this method in the class!
+            slot=self.export_segments_to_txt, # Ensure you've defined this method in the class!
             shortcut="Ctrl+Shift+K", 
             tip=self.tr("Salva le linee proiettate in txt"),
             enabled=False, # It starts disabled until an image is actually loaded
@@ -1186,174 +1186,61 @@ class MainWindow(QtWidgets.QMainWindow):
     #         # Messaggio di errore dettagliato per il debugging
     #         QtWidgets.QMessageBox.critical(self, "Errore", f"Errore nel salvataggio TXT: {str(e)}")
     #         print(f"DEBUG ERROR: {e}")
-    def export_projected_to_txt(self):
-        """Salva ogni segmento di linee/polilinee proiettato ai bordi + dimensioni W H."""
-        try:
-            self.saveFile() # Salvataggio JSON standard
-        except: pass
-
+    def export_segments_to_txt(self):
+        """Salva i segmenti reali nel formato (x1, x2, y1, y2, H, W)."""
         target_canvas = self._canvas_widgets.canvas
         if not target_canvas or not target_canvas.pixmap:
             self.statusBar().showMessage("Errore: Immagine non caricata.")
             return
             
-        # 1. Recupero dimensioni (Fondamentale per la tua ricerca)
+        # 1. Recupero dimensioni immagine (H, W)
         img_w = target_canvas.pixmap.width()
         img_h = target_canvas.pixmap.height()
         
-        # Prima riga: WIDTH HEIGHT
-        lines_output = [f"{img_w} {img_h}"]
+        lines_output = []
 
         try:
             for shape in target_canvas.shapes:
-                # Una polilinea di N punti ha (N-1) segmenti
-                # Un poligono chiuso di N punti ha N segmenti (l'ultimo torna al primo)
                 num_points = len(shape.points)
                 if num_points < 2:
                     continue
 
-                # Determiniamo quanti segmenti processare
-                # Se è un poligono chiuso, colleghiamo l'ultimo punto al primo
+                # Gestione polilinee: salviamo ogni segmento consecutivo separatamente
+                # Se è un poligono chiuso, colleghiamo l'ultimo al primo
                 is_closed = shape.shape_type == "polygon" and getattr(shape, 'is_closed', True)
                 range_limit = num_points if is_closed else num_points - 1
 
                 for i in range(range_limit):
                     p1 = shape.points[i]
-                    p2 = shape.points[(i + 1) % num_points] # Torna a 0 se i è l'ultimo punto
+                    p2 = shape.points[(i + 1) % num_points]
                     
+                    # Coordinate reali (senza proiezioni ai bordi)
                     x1, y1 = p1.x(), p1.y()
                     x2, y2 = p2.x(), p2.y()
 
-                    # Calcolo proiezione ai bordi (Geometria Proiettiva)
-                    dx, dy = x2 - x1, y2 - y1
-                    if abs(dx) < 1e-6 and abs(dy) < 1e-6: continue
+                    # 2. Formattazione richiesta: (x1, x2, y1, y2, altezza, larghezza)
+                    # Usiamo i nomi delle variabili per chiarezza nel file o solo i numeri? 
+                    # Qui metto il formato numerico pulito per il parsing della tua rete neurale:
+                    line_str = f"{x1:.2f}, {x2:.2f}, {y1:.2f}, {y2:.2f}, {img_h}, {img_w}"
+                    lines_output.append(line_str)
 
-                    t_candidates = []
-                    if abs(dx) > 1e-10:
-                        t_candidates.extend([-x1 / dx, (img_w - x1) / dx])
-                    if abs(dy) > 1e-10:
-                        t_candidates.extend([-y1 / dy, (img_h - y1) / dy])
+            if not lines_output:
+                self.statusBar().showMessage("Nessun segmento da esportare.")
+                return
 
-                    valid_pts = []
-                    for t in t_candidates:
-                        ix, iy = x1 + t * dx, y1 + t * dy
-                        # Controllo confini con piccola tolleranza
-                        if -0.1 <= ix <= img_w + 0.1 and -0.1 <= iy <= img_h + 0.1:
-                            valid_pts.append((ix, iy))
-                    
-                    if len(valid_pts) >= 2:
-                        # Ordiniamo i punti per coerenza spaziale
-                        valid_pts.sort(key=lambda p: (p[0], p[1]))
-                        ps, pe = valid_pts[0], valid_pts[-1]
-                        
-                        # Salvataggio: LABEL x1 y1 x2 y2
-                        lines_output.append(f"{shape.label} {ps[0]:.2f} {ps[1]:.2f} {pe[0]:.2f} {pe[1]:.2f}")
-
-            # 2. Dialogo di salvataggio
+            # 3. Dialogo di salvataggio
             save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-                self, "Esporta Dataset Segmenti", "", "TXT (*.txt)"
+                self, "Esporta Dataset Reale", "", "TXT (*.txt)"
             )
             
             if save_path:
                 with open(save_path, 'w', encoding='utf-8') as f:
+                    # Scriviamo ogni segmento su una nuova riga
                     f.write("\n".join(lines_output))
-                self.statusBar().showMessage(f"Esportati {len(lines_output)-1} segmenti ({img_w}x{img_h}).")
+                self.statusBar().showMessage(f"Salvato: {len(lines_output)} segmenti in formato (x1,x2,y1,y2,H,W).")
             
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
-        
-    def merge_parallel_lines(self):
-        """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
-        import numpy as np
-        canvas = self._canvas_widgets.canvas
-        if not canvas.shapes: return
-
-        # Parametri di tolleranza per la tua ricerca
-        DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
-        ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
-
-        shapes = list(canvas.shapes)
-        merged_list = []
-        used = [False] * len(shapes)
-
-        for i in range(len(shapes)):
-            # Questa riga deve avere 1 tab (o 4 spazi) di rientro
-            if used[i] or len(shapes[i].points) < 2: 
-                continue
-            
-            group = [shapes[i]]
-            used[i] = True
-            
-            # Parametri linea i
-            p1, p2 = shapes[i].points[0], shapes[i].points[1]
-            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
-
-            for j in range(i + 1, len(shapes)):
-                # Questo blocco deve avere 2 tab (o 8 spazi)
-                if used[j] or len(shapes[j].points) < 2: 
-                    continue
-                
-                p3, p4 = shapes[j].points[0], shapes[j].points[1]
-                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
-
-                # Verifica parallelismo
-                diff_angle = abs(angle_i - angle_j)
-                diff_angle = min(diff_angle, np.pi - diff_angle)
-
-                if diff_angle < np.radians(ANGLE_EPSILON):
-                    # Verifica distanza ortogonale
-                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-                    dist = self._dist_point_to_line(mid_j, p1, p2)
-                    
-                    if dist < DIST_EPSILON:
-                        group.append(shapes[j])
-                        used[j] = True
-            
-            # Parametri linea i
-            p1, p2 = shapes[i].points[0], shapes[i].points[1]
-            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
-
-            for j in range(i + 1, len(shapes)):
-                if used[j] or len(shapes[j].points) < 2: continue
-                
-                p3, p4 = shapes[j].points[0], shapes[j].points[1]
-                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
-
-                # Verifica parallelismo
-                diff_angle = abs(angle_i - angle_j)
-                diff_angle = min(diff_angle, np.pi - diff_angle)
-
-                if diff_angle < np.radians(ANGLE_EPSILON):
-                    # Verifica distanza tra le rette (proiezione ortogonale)
-                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-                    dist = self._dist_point_to_line(mid_j, p1, p2)
-                    
-                    if dist < DIST_EPSILON:
-                        group.append(shapes[j])
-                        used[j] = True
-
-            # Creazione della LINEA MEDIA
-            if len(group) > 1:
-                new_shape = self._create_average_line(group)
-                merged_list.append(new_shape)
-            else:
-                merged_list.append(shapes[i])
-
-        # Aggiornamento UI (Safe Mode)
-        canvas.shapes = merged_list
-        label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        if label_widget:
-            label_widget.clear()
-            for s in merged_list:
-                self.addLabel(s)
-        
-        canvas.update()
-        self.setDirty()
-        self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
 
     def _dist_point_to_line(self, p, l1, l2):
         """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
