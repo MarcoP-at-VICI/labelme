@@ -941,6 +941,29 @@ class MainWindow(QtWidgets.QMainWindow):
     #     msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
     #     self.statusBar().showMessage(msg)
     #     print(f"DEBUG: {msg}")
+    def get_next_label(self, prefix="L_"):
+        """Trova il numero più alto tra le etichette esistenti e suggerisce il successivo."""
+        max_id = -1
+        target_canvas = self._canvas_widgets.canvas
+        
+        # Scansiona tutte le forme già presenti per trovare l'indice massimo
+        for shape in target_canvas.shapes:
+            if shape.label and shape.label.startswith(prefix):
+                try:
+                    # Estrae la parte numerica (es. da "L_005" prende "005")
+                    num_str = shape.label.replace(prefix, "")
+                    num = int(num_str)
+                    if num > max_id:
+                        max_id = num
+                except ValueError:
+                    continue
+        
+        # Restituisce il prossimo ID formattato con tre cifre (es. L_011)
+        return f"{prefix}{max_id + 1:03d}"
+
+
+
+        
     def auto_detect_lines(self):
         """Estrae i segmenti LSD, esegue lo Snap dei vertici contigui e li inietta nel Canvas."""
         
@@ -1024,8 +1047,9 @@ class MainWindow(QtWidgets.QMainWindow):
             x2, y2 = self._apply_snap(x2_raw, y2_raw)
             # --------------------------
             
-            # Creiamo un'etichetta univoca usando l'indice
-            unique_label = f"Linea_{idx:03d}"
+            # 2. GENERAZIONE ETICHETTA UNICA (Richiamo funzione)
+            # Questo garantisce che non ci siano conflitti nel file TXT/JSON
+            unique_label = self.get_next_label(prefix="L_")
                 
             shape = Shape(label=unique_label, shape_type="polygon")
             shape.addPoint(QtCore.QPointF(x1, y1))
