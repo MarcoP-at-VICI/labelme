@@ -1089,7 +1089,7 @@ class MainWindow(QtWidgets.QMainWindow):
         label_list_widget = self._docks.label_list
             
         # Accediamo alla lista reale (spesso chiamata 'view' o 'list_widget')
-        inner_view = getattr(label_list_widget, 'view', label_list_widget
+        inner_view = getattr(label_list_widget, 'view', label_list_widget)
         
         if not canvas.selectedShapes:
             inner_view.clearSelection()
