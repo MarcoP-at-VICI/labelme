@@ -941,6 +941,7 @@ class MainWindow(QtWidgets.QMainWindow):
     #     msg = f"Iniettati {len(filtered_lines)} segmenti validi. Pronti per il salvataggio."
     #     self.statusBar().showMessage(msg)
     #     print(f"DEBUG: {msg}")
+        
     def get_next_label(self, prefix="L_"):
         """Trova il numero più alto tra le etichette esistenti e suggerisce il successivo."""
         max_id = -1
@@ -1374,163 +1375,163 @@ class MainWindow(QtWidgets.QMainWindow):
     #     except Exception as e:
     #         QtWidgets.QMessageBox.critical(self, "Errore Export", f"Errore: {str(e)}")
 
-    def merge_parallel_lines(self):
-        """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
-        import numpy as np
-        canvas = self._canvas_widgets.canvas
-        if not canvas.shapes: return
+    # def merge_parallel_lines(self):
+    #     """Fonde segmenti paralleli e vicini (utilissimo per pulire l'output LSD)."""
+    #     import numpy as np
+    #     canvas = self._canvas_widgets.canvas
+    #     if not canvas.shapes: return
 
-        # Parametri di tolleranza per la tua ricerca
-        DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
-        ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
+    #     # Parametri di tolleranza per la tua ricerca
+    #     DIST_EPSILON = 15.0      # Pixel di distanza massima tra i segmenti
+    #     ANGLE_EPSILON = 2.0      # Gradi di differenza massima per il parallelismo
 
-        shapes = list(canvas.shapes)
-        merged_list = []
-        used = [False] * len(shapes)
+    #     shapes = list(canvas.shapes)
+    #     merged_list = []
+    #     used = [False] * len(shapes)
 
-        for i in range(len(shapes)):
-            # Questa riga deve avere 1 tab (o 4 spazi) di rientro
-            if used[i] or len(shapes[i].points) < 2: 
-                continue
+    #     for i in range(len(shapes)):
+    #         # Questa riga deve avere 1 tab (o 4 spazi) di rientro
+    #         if used[i] or len(shapes[i].points) < 2: 
+    #             continue
             
-            group = [shapes[i]]
-            used[i] = True
+    #         group = [shapes[i]]
+    #         used[i] = True
             
-            # Parametri linea i
-            p1, p2 = shapes[i].points[0], shapes[i].points[1]
-            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+    #         # Parametri linea i
+    #         p1, p2 = shapes[i].points[0], shapes[i].points[1]
+    #         vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+    #         angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
 
-            for j in range(i + 1, len(shapes)):
-                # Questo blocco deve avere 2 tab (o 8 spazi)
-                if used[j] or len(shapes[j].points) < 2: 
-                    continue
+    #         for j in range(i + 1, len(shapes)):
+    #             # Questo blocco deve avere 2 tab (o 8 spazi)
+    #             if used[j] or len(shapes[j].points) < 2: 
+    #                 continue
                 
-                p3, p4 = shapes[j].points[0], shapes[j].points[1]
-                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
+    #             p3, p4 = shapes[j].points[0], shapes[j].points[1]
+    #             vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+    #             angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
 
-                # Verifica parallelismo
-                diff_angle = abs(angle_i - angle_j)
-                diff_angle = min(diff_angle, np.pi - diff_angle)
+    #             # Verifica parallelismo
+    #             diff_angle = abs(angle_i - angle_j)
+    #             diff_angle = min(diff_angle, np.pi - diff_angle)
 
-                if diff_angle < np.radians(ANGLE_EPSILON):
-                    # Verifica distanza ortogonale
-                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-                    dist = self._dist_point_to_line(mid_j, p1, p2)
+    #             if diff_angle < np.radians(ANGLE_EPSILON):
+    #                 # Verifica distanza ortogonale
+    #                 mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+    #                 dist = self._dist_point_to_line(mid_j, p1, p2)
                     
-                    if dist < DIST_EPSILON:
-                        group.append(shapes[j])
-                        used[j] = True
+    #                 if dist < DIST_EPSILON:
+    #                     group.append(shapes[j])
+    #                     used[j] = True
             
-            # Parametri linea i
-            p1, p2 = shapes[i].points[0], shapes[i].points[1]
-            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
-            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+    #         # Parametri linea i
+    #         p1, p2 = shapes[i].points[0], shapes[i].points[1]
+    #         vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+    #         angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
 
-            for j in range(i + 1, len(shapes)):
-                if used[j] or len(shapes[j].points) < 2: continue
+    #         for j in range(i + 1, len(shapes)):
+    #             if used[j] or len(shapes[j].points) < 2: continue
                 
-                p3, p4 = shapes[j].points[0], shapes[j].points[1]
-                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
-                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
+    #             p3, p4 = shapes[j].points[0], shapes[j].points[1]
+    #             vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+    #             angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
 
-                # Verifica parallelismo
-                diff_angle = abs(angle_i - angle_j)
-                diff_angle = min(diff_angle, np.pi - diff_angle)
+    #             # Verifica parallelismo
+    #             diff_angle = abs(angle_i - angle_j)
+    #             diff_angle = min(diff_angle, np.pi - diff_angle)
 
-                if diff_angle < np.radians(ANGLE_EPSILON):
-                    # Verifica distanza tra le rette (proiezione ortogonale)
-                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
-                    dist = self._dist_point_to_line(mid_j, p1, p2)
+    #             if diff_angle < np.radians(ANGLE_EPSILON):
+    #                 # Verifica distanza tra le rette (proiezione ortogonale)
+    #                 mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+    #                 dist = self._dist_point_to_line(mid_j, p1, p2)
                     
-                    if dist < DIST_EPSILON:
-                        group.append(shapes[j])
-                        used[j] = True
+    #                 if dist < DIST_EPSILON:
+    #                     group.append(shapes[j])
+    #                     used[j] = True
 
-            # Creazione della LINEA MEDIA
-            if len(group) > 1:
-                new_shape = self._create_average_line(group)
-                merged_list.append(new_shape)
-            else:
-                merged_list.append(shapes[i])
+    #         # Creazione della LINEA MEDIA
+    #         if len(group) > 1:
+    #             new_shape = self._create_average_line(group)
+    #             merged_list.append(new_shape)
+    #         else:
+    #             merged_list.append(shapes[i])
     
-        # Aggiornamento UI (Safe Mode)
+    #     # Aggiornamento UI (Safe Mode)
         
-        # canvas.shapes = merged_list
-        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        # if label_widget:
-        #     label_widget.clear()
-        #     for s in merged_list:
-        #         self.addLabel(s)
+    #     # canvas.shapes = merged_list
+    #     # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+    #     # if label_widget:
+    #     #     label_widget.clear()
+    #     #     for s in merged_list:
+    #     #         self.addLabel(s)
         
-        # canvas.update()
-        # self.setDirty()
-        # self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
+    #     # canvas.update()
+    #     # self.setDirty()
+    #     # self.statusBar().showMessage(f"Merge: {len(merged_list)} linee risultanti.")
 
 
-        # # --- PARTE FINALE CORRETTA ---
-        # # 1. Pulizia totale sincronizzata
-        # canvas.shapes = []
-        # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
-        # if label_widget:
-        #         label_widget.clear()
+    #     # # --- PARTE FINALE CORRETTA ---
+    #     # # 1. Pulizia totale sincronizzata
+    #     # canvas.shapes = []
+    #     # label_widget = getattr(self, 'labelList', getattr(self, 'label_list', None))
+    #     # if label_widget:
+    #     #         label_widget.clear()
 
-        # # 2. Re-inserimento tramite addLabel
-        # # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
-        # for s in merged_list:
-        #         # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
-        #         if s.label == "Linea_Merged":
-        #             s.label = self.get_next_label(prefix="L_")
+    #     # # 2. Re-inserimento tramite addLabel
+    #     # # Questo risolve il crash ValueError: list.remove(x) perché registra la shape
+    #     # for s in merged_list:
+    #     #         # Se la linea è nuova, diamogli un ID progressivo invece di "Linea_Merged"
+    #     #         if s.label == "Linea_Merged":
+    #     #             s.label = self.get_next_label(prefix="L_")
             
-        #         self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
-        #         canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
-        # self.setEditMode() 
-        # canvas.setEditing(True) #Aggiunta
-        # canvas.update() #Aggiutna
-        # self.setDirty()
-        # self._actions.save.setEnabled(True)
-        # self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
+    #     #         self.addLabel(s) # Registra l'item nella lista e lo lega alla shape
+    #     #         canvas.shapes.append(s) # Aggiunge la shape al canvas ufficialmente
+    #     # self.setEditMode() 
+    #     # canvas.setEditing(True) #Aggiunta
+    #     # canvas.update() #Aggiutna
+    #     # self.setDirty()
+    #     # self._actions.save.setEnabled(True)
+    #     # self.statusBar().showMessage(f"Merge completato: {len(merged_list)} linee.")
          
          
-        # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
-        self._canvas_widgets.canvas.shapes = []
+    #     # 1. Pulizia "profonda": scolleghiamo i vecchi riferimenti
+    #     self._canvas_widgets.canvas.shapes = []
         
-        # Cerchiamo di pulire la lista in modo sicuro
-        # Proviamo i due nomi comuni che LabelMe usa per il widget lista
-        l_widget = getattr(self, 'labelList', None) or getattr(self, 'label_list', None)
-        if l_widget is not None:
-            try:
-                l_widget.clear()
-            except AttributeError:
-                # Se è un oggetto complesso, cerchiamo la view interna
-                if hasattr(l_widget, 'view'):
-                    l_widget.view.clear()
+    #     # Cerchiamo di pulire la lista in modo sicuro
+    #     # Proviamo i due nomi comuni che LabelMe usa per il widget lista
+    #     l_widget = getattr(self, 'labelList', None) or getattr(self, 'label_list', None)
+    #     if l_widget is not None:
+    #         try:
+    #             l_widget.clear()
+    #         except AttributeError:
+    #             # Se è un oggetto complesso, cerchiamo la view interna
+    #             if hasattr(l_widget, 'view'):
+    #                 l_widget.view.clear()
         
-        # 2. Re-iniezione controllata con registrazione ufficiale
-        for s in merged_list:
-            # Assegnazione ID progressivo
-            if s.label == "Linea_Merged" or not s.label:
-                s.label = self.get_next_label(prefix="L_")
+    #     # 2. Re-iniezione controllata con registrazione ufficiale
+    #     for s in merged_list:
+    #         # Assegnazione ID progressivo
+    #         if s.label == "Linea_Merged" or not s.label:
+    #             s.label = self.get_next_label(prefix="L_")
             
-            # REGISTRAZIONE UFFICIALE: Questo lega la Shape alla MainWindow
-            # Impedisce il crash "ValueError: x not in list" durante la cancellazione
-            self.addLabel(s) 
+    #         # REGISTRAZIONE UFFICIALE: Questo lega la Shape alla MainWindow
+    #         # Impedisce il crash "ValueError: x not in list" durante la cancellazione
+    #         self.addLabel(s) 
             
-            # AGGIUNTA AL DISEGNO
-            if s not in self._canvas_widgets.canvas.shapes:
-                self._canvas_widgets.canvas.shapes.append(s)
+    #         # AGGIUNTA AL DISEGNO
+    #         if s not in self._canvas_widgets.canvas.shapes:
+    #             self._canvas_widgets.canvas.shapes.append(s)
 
-        # 3. Ripristino Interfaccia e Modalità Selezione
-        self.setEditMode() 
-        self._canvas_widgets.canvas.setEditing(True)
+    #     # 3. Ripristino Interfaccia e Modalità Selezione
+    #     self.setEditMode() 
+    #     self._canvas_widgets.canvas.setEditing(True)
         
-        # 4. Stato Finale e Update Grafico
-        self.dirty = True 
-        self._actions.save.setEnabled(True)
-        self._canvas_widgets.canvas.update()
+    #     # 4. Stato Finale e Update Grafico
+    #     self.dirty = True 
+    #     self._actions.save.setEnabled(True)
+    #     self._canvas_widgets.canvas.update()
         
-        self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} linee.")
+    #     self.statusBar().showMessage(f"Dataset sincronizzato: {len(merged_list)} linee.")
             
           
          
@@ -1538,7 +1539,81 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
+    def merge_parallel_lines(self):
+        """Fonde segmenti paralleli e vicini (ottimizzato per la tua MainWindow)."""
+        import numpy as np
+        canvas = self._canvas_widgets.canvas
+        if not canvas.shapes: 
+            return
+
+        DIST_EPSILON = 15.0
+        ANGLE_EPSILON = 2.0
+
+        shapes = list(canvas.shapes)
+        merged_list = []
+        used = [False] * len(shapes)
+
+        for i in range(len(shapes)):
+            if used[i] or len(shapes[i].points) < 2: 
+                continue
+            
+            group = [shapes[i]]
+            used[i] = True
+            
+            p1, p2 = shapes[i].points[0], shapes[i].points[1]
+            vec_i = np.array([p2.x() - p1.x(), p2.y() - p1.y()])
+            angle_i = np.arctan2(vec_i[1], vec_i[0]) % np.pi
+
+            for j in range(i + 1, len(shapes)):
+                if used[j] or len(shapes[j].points) < 2: 
+                    continue
+                
+                p3, p4 = shapes[j].points[0], shapes[j].points[1]
+                vec_j = np.array([p4.x() - p3.x(), p4.y() - p3.y()])
+                angle_j = np.arctan2(vec_j[1], vec_j[0]) % np.pi
+
+                diff_angle = abs(angle_i - angle_j)
+                diff_angle = min(diff_angle, np.pi - diff_angle)
+
+                if diff_angle < np.radians(ANGLE_EPSILON):
+                    mid_j = np.array([(p3.x() + p4.x())/2, (p3.y() + p4.y())/2])
+                    dist = self._dist_point_to_line(mid_j, p1, p2)
+                    
+                    if dist < DIST_EPSILON:
+                        group.append(shapes[j])
+                        used[j] = True
+
+            if len(group) > 1:
+                new_shape = self._create_average_line(group)
+                merged_list.append(new_shape)
+            else:
+                merged_list.append(shapes[i])
+
+        # --- SINCRONIZZAZIONE BLINDATA PER LA TUA STRUTTURA ---
         
+        # 1. Pulizia corretta usando self._docks
+        canvas.shapes = []
+        canvas.selectedShapes = []
+        # Accediamo alla lista reale dentro il dock
+        if hasattr(self._docks, 'label_list'):
+            self._docks.label_list.clear()
+
+        # 2. Re-inserimento Ufficiale
+        for s in merged_list:
+            if s.label == "Linea_Merged" or not s.label:
+                # Usa il tuo metodo per ottenere il prossimo ID (es. L_001)
+                s.label = self.get_next_label(prefix="L_")
+            
+            # addLabel() collegherà correttamente la shape al widget nel dock
+            self.addLabel(s) 
+
+        # 3. Ripristino Interfaccia
+        self.setEditMode()
+        canvas.setEditing(True)
+        canvas.update()
+        
+        self.setDirty() # Usa il metodo standard di LabelMe
+        self.statusBar().showMessage(f"Merge completato: {len(canvas.shapes)} linee.")    
         
     def _dist_point_to_line(self, p, l1, l2):
         """Calcola la distanza minima tra un punto P e la retta passante per l1-l2."""
