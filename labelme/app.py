@@ -1076,7 +1076,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     label_widget.scrollToItem(item)
                     break
 
-    
+    def _apply_snap(self, x, y, epsilon=8.0):
+        """Cerca un vertice vicino nel raggio epsilon e ne restituisce le coordinate precise."""
+        target_canvas = self._canvas_widgets.canvas
+        for shape in target_canvas.shapes:
+            for p in shape.points:
+                dist = math.hypot(x - p.x(), y - p.y())
+                if dist < epsilon:
+                    return p.x(), p.y()
+        return x, y
     def project_lines_preview(self):
         """Proietta ESCLUSIVAMENTE i segmenti adiacenti (P_i -> P_i+1) ai bordi."""
         target_canvas = self._canvas_widgets.canvas
@@ -1228,7 +1236,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.statusBar().showMessage("Nessun segmento da esportare.")
                 return
 
+            
             # 3. Dialogo di salvataggio
+            base_path = os.path.splitext(self.imagePath)[0] if hasattr(self, 'imagePath') else ""
             save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
                 self, "Esporta Dataset Reale", "", "TXT (*.txt)"
             )
